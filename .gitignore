@@ -1,0 +1,29 @@
+# Claude Code internal files
+.claude/
+
+# Backend secrets
+backend/.env
+
+# Frontend secrets
+frontend/.env.local
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Screenshot artefacts
+*.png
+*.jpg
+*.jpeg
+
+# PDF uploads (user documents, not source)
+*.pdf
+
+# Node
+node_modules/
+
+# Vite build output
+dist/
+dist-ssr/
