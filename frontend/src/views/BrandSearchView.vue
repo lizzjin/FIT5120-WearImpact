@@ -96,20 +96,24 @@
             <!-- Dimension scores -->
             <div class="detail-card">
               <h3>Sustainability Scores</h3>
+              <p class="scores-desc">
+                Three independently measured dimensions from the Fashion Transparency Index.
+                Each bar shows how much of the maximum possible score this company achieved.
+              </p>
               <MetricBar
                 label="Governance & Policies"
+                sublabel="Supplier code of conduct, senior accountability (max 6 pts)"
                 :value="Math.round((companyDetail.governance_score / 6) * 100)"
-                :raw="`${companyDetail.governance_score} / 6 pts`"
               />
               <MetricBar
                 label="Supply Chain Tracing"
+                sublabel="Visibility across all production stages (max 15 pts)"
                 :value="Math.round((companyDetail.tracing_score / 15) * 100)"
-                :raw="`${companyDetail.tracing_score} / 15 pts`"
               />
               <MetricBar
                 label="Environmental Sustainability"
+                sublabel="Fibre impact, emissions targets, sustainable materials (max 21 pts)"
                 :value="Math.round((companyDetail.env_score / 21) * 100)"
-                :raw="`${companyDetail.env_score} / 21 pts`"
               />
             </div>
 
@@ -172,6 +176,7 @@
 </template>
 
 <script setup>
+import { CheckCircle2, MinusCircle, XCircle } from 'lucide-vue-next'
 import { computed, defineComponent, h, ref, watch } from 'vue'
 import BrandListItem from '../components/BrandListItem.vue'
 import BrandSearchBar from '../components/BrandSearchBar.vue'
@@ -179,26 +184,28 @@ import MetricBar from '../components/MetricBar.vue'
 import Navbar from '../components/Navbar.vue'
 import { fetchCompanyDetail, searchBrands } from '../services/brandService'
 
-// ── Inline PolicyRow component ──────────────────────────────────────────────
+// ── PolicyRow: uses lucide-vue-next icons ───────────────────────────────────
 const POLICY_CONFIG = {
-  Yes:     { icon: '✓', bg: '#f0fdf4', border: '#bbf7d0', color: '#15803d', text: 'Yes' },
-  No:      { icon: '✕', bg: '#fff1f2', border: '#fecdd3', color: '#be123c', text: 'No' },
-  Partial: { icon: '◐', bg: '#fffbeb', border: '#fde68a', color: '#92400e', text: 'Partial' },
+  Yes:     { icon: CheckCircle2, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
+  No:      { icon: XCircle,      color: '#be123c', bg: '#fff1f2', border: '#fecdd3' },
+  Partial: { icon: MinusCircle,  color: '#92400e', bg: '#fffbeb', border: '#fde68a' },
 }
 
 const PolicyRow = defineComponent({
   props: { label: String, value: String },
   setup(props) {
     return () => {
-      const cfg = POLICY_CONFIG[props.value] || { icon: '?', bg: '#f8fafc', border: '#e2e8f0', color: '#64748b', text: props.value }
+      const cfg = POLICY_CONFIG[props.value] ?? {
+        icon: MinusCircle, color: '#64748b', bg: '#f8fafc', border: '#e2e8f0',
+      }
       return h('div', { class: 'policy-row' }, [
         h('span', { class: 'policy-label' }, props.label),
         h('span', {
           class: 'policy-badge',
-          style: { background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color }
+          style: { background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color },
         }, [
-          h('span', { class: 'policy-icon' }, cfg.icon),
-          h('span', {}, cfg.text),
+          h(cfg.icon, { size: 14, strokeWidth: 2.5 }),
+          h('span', {}, props.value),
         ]),
       ])
     }
@@ -245,10 +252,12 @@ const avatarBg = computed(() => {
   return palettes[companyDetail.value.company_name.charCodeAt(0) % palettes.length]
 })
 
-// Clearbit logo for the detail panel
+// logo.dev logo with letter-avatar fallback
 const detailLogoOk = ref(true)
 const detailLogoSrc = computed(() =>
-  companyDetail.value ? `https://logo.clearbit.com/${guessDomain(companyDetail.value.company_name)}` : ''
+  companyDetail.value
+    ? `https://img.logo.dev/${guessDomain(companyDetail.value.company_name)}?token=pk_free&size=80`
+    : ''
 )
 watch(companyDetail, () => { detailLogoOk.value = true })
 
@@ -263,6 +272,10 @@ function guessDomain(name) {
     'Fast Retailing': 'fastretailing.com',
     'Kering': 'kering.com',
     'LVMH': 'lvmh.com',
+    'Adidas': 'adidas.com',
+    'Nike': 'nike.com',
+    'Puma': 'puma.com',
+    'Patagonia': 'patagonia.com',
   }
   if (overrides[name]) return overrides[name]
   return name.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com'
@@ -286,7 +299,6 @@ async function handleSearch(query) {
     searchResults.value = data.results ?? []
     emptyMessage.value = data.message || 'No brands found. Try a different spelling.'
 
-    // Auto-select first result
     if (searchResults.value.length > 0) {
       await selectCompany(searchResults.value[0])
     }
@@ -327,7 +339,6 @@ async function selectCompany(item) {
   padding: 24px;
 }
 
-/* Hero */
 .brand-hero {
   background: #edf5ef;
   border-radius: 24px;
@@ -336,40 +347,14 @@ async function selectCompany(item) {
   text-align: center;
 }
 
-.brand-hero h1 {
-  font-size: 48px;
-  color: #0f172a;
-  margin-bottom: 12px;
-}
+.brand-hero h1 { font-size: 48px; color: #0f172a; margin-bottom: 12px; }
+.brand-hero p { font-size: 18px; color: #475569; line-height: 1.6; max-width: 760px; margin: 0 auto; }
 
-.brand-hero p {
-  font-size: 18px;
-  color: #475569;
-  line-height: 1.6;
-  max-width: 760px;
-  margin: 0 auto;
-}
+.brand-search-wrap { margin-bottom: 28px; }
 
-/* Search bar */
-.brand-search-wrap {
-  margin-bottom: 28px;
-}
+.landing-hint { text-align: center; padding: 60px 0; color: #94a3b8; font-size: 17px; }
+.landing-hint em { color: #64748b; font-style: normal; font-weight: 500; }
 
-/* Landing hint */
-.landing-hint {
-  text-align: center;
-  padding: 60px 0;
-  color: #94a3b8;
-  font-size: 17px;
-}
-
-.landing-hint em {
-  color: #64748b;
-  font-style: normal;
-  font-weight: 500;
-}
-
-/* Two-column layout */
 .brand-layout {
   display: grid;
   grid-template-columns: 300px 1fr;
@@ -397,66 +382,34 @@ async function selectCompany(item) {
   gap: 6px;
 }
 
-.result-count {
-  font-weight: 400;
-  color: #94a3b8;
-  font-size: 14px;
-}
+.result-count { font-weight: 400; color: #94a3b8; font-size: 14px; }
+.brand-list { max-height: 600px; overflow-y: auto; }
 
-.brand-list {
-  max-height: 600px;
-  overflow-y: auto;
-}
-
-/* Skeleton loading */
-.skeleton-list {
-  padding: 8px 0;
-}
-
-.skeleton-item {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding: 14px 16px;
-  border-bottom: 1px solid #edf1f5;
-}
-
+/* Skeletons */
+.skeleton-list { padding: 8px 0; }
+.skeleton-item { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-bottom: 1px solid #edf1f5; }
 .sk {
   background: linear-gradient(90deg, #f0f2f5 25%, #e8eaed 50%, #f0f2f5 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 8px;
 }
-
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
-
 .sk-avatar { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; }
 .sk-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; }
 .sk-line-long { height: 14px; width: 70%; }
 .sk-line-short { height: 12px; width: 45%; }
-
-/* Detail skeleton */
 .detail-skeleton { display: flex; flex-direction: column; gap: 18px; }
 .sk-detail-header { height: 140px; border-radius: 20px; }
 .sk-detail-body { height: 120px; border-radius: 20px; }
 
-/* Empty + no-selection */
-.empty-state, .no-selection {
-  padding: 32px 20px;
-  text-align: center;
-  color: #94a3b8;
-  font-size: 15px;
-}
+.empty-state, .no-selection { padding: 32px 20px; text-align: center; color: #94a3b8; font-size: 15px; }
 
-/* Right: detail cards */
-.brand-detail-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
+/* Right panel */
+.brand-detail-panel { display: flex; flex-direction: column; gap: 18px; }
 
 .detail-card {
   background: white;
@@ -466,208 +419,97 @@ async function selectCompany(item) {
   padding: 24px;
 }
 
-.detail-card h3 {
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 18px;
-  color: #0f172a;
-}
+.detail-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; color: #0f172a; }
 
-/* Brand summary header */
-.brand-summary-header {
-  display: flex;
-  gap: 18px;
-  align-items: flex-start;
-  margin-bottom: 20px;
-}
+/* Brand summary */
+.brand-summary-header { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 20px; }
 
 .brand-avatar-large {
-  width: 56px;
-  height: 56px;
+  width: 56px; height: 56px;
   border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 24px;
-  color: #334155;
-  flex-shrink: 0;
-  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 24px; color: #334155;
+  flex-shrink: 0; overflow: hidden;
   border: 1px solid #e5e7eb;
 }
 
-.detail-logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 6px;
-  background: white;
-}
+.detail-logo-img { width: 100%; height: 100%; object-fit: contain; padding: 6px; background: white; }
 
-.brand-summary-header h2 {
-  font-size: 22px;
-  color: #0f172a;
-  margin-bottom: 6px;
-}
+.brand-summary-header h2 { font-size: 22px; color: #0f172a; margin-bottom: 6px; }
 
 .category-tag {
-  font-size: 12px;
-  background: #f1f5f9;
-  color: #475569;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-weight: 500;
+  font-size: 12px; background: #f1f5f9; color: #475569;
+  padding: 3px 10px; border-radius: 999px; font-weight: 500;
 }
 
-/* Score badge */
-.score-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
+.score-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 
 .score-badge {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  padding: 10px 18px;
-  border-radius: 12px;
-  flex-shrink: 0;
+  display: inline-flex; align-items: baseline; gap: 4px;
+  padding: 10px 18px; border-radius: 12px; flex-shrink: 0;
 }
 
-.score-number {
-  font-size: 28px;
-  font-weight: 800;
-  line-height: 1;
-}
+.score-number { font-size: 28px; font-weight: 800; line-height: 1; }
+.score-max { font-size: 16px; font-weight: 500; opacity: 0.7; }
+.score-label-text { font-size: 15px; font-weight: 700; margin-left: 8px; }
+.score-desc { color: #475569; font-size: 14px; margin: 0; flex: 1; }
 
-.score-max {
-  font-size: 16px;
-  font-weight: 500;
-  opacity: 0.7;
-}
-
-.score-label-text {
-  font-size: 15px;
-  font-weight: 700;
-  margin-left: 8px;
-}
-
-.score-desc {
-  color: #475569;
-  font-size: 14px;
-  margin: 0;
-  flex: 1;
+/* Scores section description */
+.scores-desc {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 20px;
+  line-height: 1.5;
 }
 
 /* Policy rows */
-.policy-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-}
+.policy-list { display: flex; flex-direction: column; gap: 0; margin-bottom: 16px; }
 
 .policy-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid #f8fafc;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.policy-label {
-  font-size: 14px;
-  color: #334155;
-  flex: 1;
-}
+.policy-row:last-child { border-bottom: none; }
+
+.policy-label { font-size: 14px; color: #334155; flex: 1; }
 
 .policy-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 12px;
-  border-radius: 999px;
-  flex-shrink: 0;
-}
-
-.policy-icon {
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 600;
+  padding: 4px 12px; border-radius: 999px; flex-shrink: 0;
 }
 
 .fibre-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 12px;
-  border-top: 1px solid #f1f5f9;
-  margin-top: 4px;
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 12px; border-top: 1px solid #f1f5f9;
 }
 
-.fibre-label {
-  font-size: 14px;
-  color: #334155;
-}
+.fibre-label { font-size: 14px; color: #334155; }
+.fibre-value { font-weight: 700; font-size: 14px; color: #0f172a; }
 
-.fibre-value {
-  font-weight: 700;
-  font-size: 14px;
-  color: #0f172a;
-}
-
-/* Brands chip list */
-.brands-chip-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
+/* Brands chips */
+.brands-chip-list { display: flex; flex-wrap: wrap; gap: 10px; }
 
 .brand-chip {
-  background: #f1f5f9;
-  color: #334155;
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  background: #f1f5f9; color: #334155;
+  padding: 6px 14px; border-radius: 999px;
+  font-size: 14px; display: flex; align-items: center; gap: 6px;
 }
 
 .chip-score {
-  background: #e2e8f0;
-  color: #475569;
-  padding: 1px 7px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
+  background: #e2e8f0; color: #475569;
+  padding: 1px 7px; border-radius: 999px;
+  font-size: 12px; font-weight: 600;
 }
 
 /* Data source */
-.data-source-box {
-  background: #f5f9ff;
-  border-color: #c7ddff;
-}
-
-.data-source-box p {
-  color: #334155;
-  line-height: 1.7;
-  font-size: 14px;
-  margin: 0;
-}
+.data-source-box { background: #f5f9ff; border-color: #c7ddff; }
+.data-source-box p { color: #334155; line-height: 1.7; font-size: 14px; margin: 0; }
 
 @media (max-width: 900px) {
-  .brand-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .brand-hero h1 {
-    font-size: 34px;
-  }
+  .brand-layout { grid-template-columns: 1fr; }
+  .brand-hero h1 { font-size: 34px; }
 }
 </style>
