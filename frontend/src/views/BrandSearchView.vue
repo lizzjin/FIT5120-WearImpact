@@ -11,22 +11,24 @@
         </p>
       </section>
 
+      <!-- Search bar + button -->
       <div class="brand-search-wrap">
         <BrandSearchBar v-model="searchQuery" @search="handleSearch" />
+        <button class="search-btn" @click="doSearch">Search</button>
       </div>
 
-      <!-- Search results layout -->
-      <div v-if="searchQuery.trim()" class="brand-layout">
+      <!-- Main layout: always visible once featured brands loaded -->
+      <div v-if="showLayout" class="brand-layout">
 
         <!-- Left: results list -->
         <aside class="brand-list-panel">
           <div class="panel-title">
-            Results
-            <span v-if="!isSearching" class="result-count">({{ searchResults.length }})</span>
+            <span>{{ committedQuery.trim() ? 'Results' : 'Featured Brands' }}</span>
+            <span v-if="!isSearching && committedQuery.trim()" class="result-count">({{ searchResults.length }})</span>
           </div>
 
           <!-- Skeleton while loading -->
-          <div v-if="isSearching" class="skeleton-list">
+          <div v-if="isSearching || isFeaturedLoading" class="skeleton-list">
             <div v-for="n in 5" :key="n" class="skeleton-item">
               <div class="sk sk-avatar"></div>
               <div class="sk-lines">
@@ -36,15 +38,15 @@
             </div>
           </div>
 
-          <!-- Empty state -->
-          <div v-else-if="searchResults.length === 0" class="empty-state">
+          <!-- Empty state (only for search) -->
+          <div v-else-if="committedQuery.trim() && displayList.length === 0" class="empty-state">
             <p>{{ emptyMessage }}</p>
           </div>
 
-          <!-- Results -->
+          <!-- Brand list -->
           <div v-else class="brand-list">
             <BrandListItem
-              v-for="item in searchResults"
+              v-for="item in displayList"
               :key="item.company_id"
               :brand="item"
               :is-active="selectedCompany?.company_id === item.company_id"
@@ -120,12 +122,33 @@
             <!-- Policy questions -->
             <div class="detail-card">
               <h3>Supply Chain Policies</h3>
+              <p class="scores-desc">Whether this company has publicly committed to key supply chain and environmental standards.</p>
               <div class="policy-list">
-                <PolicyRow label="Supplier Code of Conduct" :value="companyDetail.has_supplier_code" />
-                <PolicyRow label="Code covers raw materials level" :value="companyDetail.code_covers_raw_materials" />
-                <PolicyRow label="Senior officer accountability" :value="companyDetail.has_senior_accountability" />
-                <PolicyRow label="Assessed environmental fibre impact" :value="companyDetail.assessed_fibre_impact" />
-                <PolicyRow label="Published emissions reduction target" :value="companyDetail.has_emissions_target" />
+                <PolicyRow
+                  label="Supplier Code of Conduct published"
+                  sublabel="The company has a formal, publicly available document setting ethical and labour standards for its suppliers."
+                  :value="companyDetail.has_supplier_code"
+                />
+                <PolicyRow
+                  label="Code of Conduct covers raw materials"
+                  sublabel="The Supplier Code of Conduct extends beyond factories to cover raw material sourcing (e.g. cotton farms, textile mills)."
+                  :value="companyDetail.code_covers_raw_materials"
+                />
+                <PolicyRow
+                  label="Senior officer accountable for supply chain"
+                  sublabel="A named executive (e.g. CEO or Chief Sustainability Officer) holds formal responsibility for supply chain ethics."
+                  :value="companyDetail.has_senior_accountability"
+                />
+                <PolicyRow
+                  label="Assessed fibre environmental impact"
+                  sublabel="The company has formally evaluated the environmental footprint of the fibres used in its products."
+                  :value="companyDetail.assessed_fibre_impact"
+                />
+                <PolicyRow
+                  label="Emissions reduction target published"
+                  sublabel="The company has publicly committed to a measurable greenhouse gas emissions reduction goal."
+                  :value="companyDetail.has_emissions_target"
+                />
               </div>
 
               <div class="fibre-row">
@@ -144,7 +167,6 @@
                   class="brand-chip"
                 >
                   {{ b.brand_name }}
-                  <span class="chip-score">{{ b.score }}</span>
                 </span>
               </div>
             </div>
@@ -157,6 +179,14 @@
                 Data reflects publicly available corporate disclosures on supply chain policies,
                 environmental commitments, and fibre sourcing.
               </p>
+              <a
+                href="https://baptistworldaid.org.au/wp-content/uploads/2024/10/Ethical-Fashion-Report-2024-Appendix-1aec741f0a81f5f9.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="source-link"
+              >
+                View Full Report →
+              </a>
             </div>
           </template>
 
@@ -167,9 +197,9 @@
         </section>
       </div>
 
-      <!-- Landing state before any search -->
+      <!-- Loading featured brands on first mount -->
       <div v-else class="landing-hint">
-        <p>Start typing a brand name above — e.g. <em>Zara</em>, <em>Patagonia</em>, <em>H&amp;M</em></p>
+        <p>Loading featured brands…</p>
       </div>
     </div>
   </div>
@@ -177,34 +207,44 @@
 
 <script setup>
 import { CheckCircle2, MinusCircle, XCircle } from 'lucide-vue-next'
-import { computed, defineComponent, h, ref, watch } from 'vue'
+import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
 import BrandListItem from '../components/BrandListItem.vue'
 import BrandSearchBar from '../components/BrandSearchBar.vue'
 import MetricBar from '../components/MetricBar.vue'
 import Navbar from '../components/Navbar.vue'
 import { fetchCompanyDetail, searchBrands } from '../services/brandService'
 
-// ── PolicyRow: uses lucide-vue-next icons ───────────────────────────────────
+// ── PolicyRow: icon + colored label, no box ─────────────────────────────────
 const POLICY_CONFIG = {
-  Yes:     { icon: CheckCircle2, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
-  No:      { icon: XCircle,      color: '#be123c', bg: '#fff1f2', border: '#fecdd3' },
-  Partial: { icon: MinusCircle,  color: '#92400e', bg: '#fffbeb', border: '#fde68a' },
+  Yes:     { icon: CheckCircle2, color: '#16a34a' },
+  No:      { icon: XCircle,      color: '#be123c' },
+  Partial: { icon: MinusCircle,  color: '#92400e' },
 }
 
 const PolicyRow = defineComponent({
-  props: { label: String, value: String },
+  props: { label: String, sublabel: String, value: String },
   setup(props) {
     return () => {
-      const cfg = POLICY_CONFIG[props.value] ?? {
-        icon: MinusCircle, color: '#64748b', bg: '#f8fafc', border: '#e2e8f0',
-      }
-      return h('div', { class: 'policy-row' }, [
-        h('span', { class: 'policy-label' }, props.label),
+      const cfg = POLICY_CONFIG[props.value] ?? { icon: MinusCircle, color: '#94a3b8' }
+      return h('div', {
+        style: {
+          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+          gap: '12px', padding: '12px 0', borderBottom: '1px solid #f1f5f9',
+        },
+      }, [
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '3px', flex: '1' } }, [
+          h('span', { style: { fontSize: '14px', color: '#1e293b', fontWeight: '600' } }, props.label),
+          props.sublabel
+            ? h('span', { style: { fontSize: '12px', color: '#94a3b8', lineHeight: '1.4' } }, props.sublabel)
+            : null,
+        ]),
         h('span', {
-          class: 'policy-badge',
-          style: { background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color },
+          style: {
+            display: 'inline-flex', alignItems: 'center', gap: '5px',
+            fontSize: '13px', fontWeight: '600', flexShrink: '0', color: cfg.color,
+          },
         }, [
-          h(cfg.icon, { size: 14, strokeWidth: 2.5 }),
+          h(cfg.icon, { size: 16, strokeWidth: 2.5 }),
           h('span', {}, props.value),
         ]),
       ])
@@ -213,13 +253,24 @@ const PolicyRow = defineComponent({
 })
 // ────────────────────────────────────────────────────────────────────────────
 
-const searchQuery = ref('')
+const searchQuery = ref('')       // mirrors the input box — changes on every keystroke
+const committedQuery = ref('')    // the query that was actually submitted — only changes on Search/Enter
 const searchResults = ref([])
+const featuredCompanies = ref([])
+const isFeaturedLoading = ref(true)
 const selectedCompany = ref(null)
 const companyDetail = ref(null)
 const isSearching = ref(false)
 const isLoadingDetail = ref(false)
 const emptyMessage = ref('No brands found. Try a different spelling.')
+
+// Show layout once featured brands are loaded
+const showLayout = computed(() => !isFeaturedLoading.value)
+
+// Left panel title and list are driven by committedQuery, not the live input
+const displayList = computed(() =>
+  committedQuery.value.trim() ? searchResults.value : featuredCompanies.value
+)
 
 const LABEL_COLORS = {
   Great: '#16a34a',
@@ -256,7 +307,7 @@ const avatarBg = computed(() => {
 const detailLogoOk = ref(true)
 const detailLogoSrc = computed(() =>
   companyDetail.value
-    ? `https://img.logo.dev/${guessDomain(companyDetail.value.company_name)}?token=pk_free&size=80`
+    ? `https://img.logo.dev/${guessDomain(companyDetail.value.company_name)}?token=pk_LbFI27UJRDWnSoDCC_4GYA&size=80`
     : ''
 )
 watch(companyDetail, () => { detailLogoOk.value = true })
@@ -281,12 +332,49 @@ function guessDomain(name) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com'
 }
 
+// Load a set of well-known brands to show before any search
+const FEATURED_QUERIES = ['Nike', 'Patagonia', 'H&M', 'Adidas', 'Zara', "Levi's"]
+
+onMounted(async () => {
+  try {
+    const results = await Promise.all(
+      FEATURED_QUERIES.map(q => searchBrands(q).catch(() => ({ results: [] })))
+    )
+    const seen = new Set()
+    const companies = []
+    for (const res of results) {
+      const first = res.results?.[0]
+      if (first && !seen.has(first.company_id)) {
+        seen.add(first.company_id)
+        companies.push(first)
+      }
+    }
+    featuredCompanies.value = companies
+    // Auto-select the first featured company
+    if (companies.length > 0) {
+      await selectCompany(companies[0])
+    }
+  } catch (err) {
+    console.error('Failed to load featured brands:', err)
+  } finally {
+    isFeaturedLoading.value = false
+  }
+})
+
+function doSearch() {
+  handleSearch(searchQuery.value)
+}
+
 async function handleSearch(query) {
   const q = query.trim()
+  committedQuery.value = q  // lock in the submitted query
+
   if (!q) {
+    // Empty search → go back to featured brands
     searchResults.value = []
-    selectedCompany.value = null
-    companyDetail.value = null
+    if (featuredCompanies.value.length > 0 && !companyDetail.value) {
+      await selectCompany(featuredCompanies.value[0])
+    }
     return
   }
 
@@ -350,10 +438,33 @@ async function selectCompany(item) {
 .brand-hero h1 { font-size: 48px; color: #0f172a; margin-bottom: 12px; }
 .brand-hero p { font-size: 18px; color: #475569; line-height: 1.6; max-width: 760px; margin: 0 auto; }
 
-.brand-search-wrap { margin-bottom: 28px; }
+/* Search bar + button row */
+.brand-search-wrap {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.brand-search-wrap > :first-child { flex: 1; }
+
+.search-btn {
+  padding: 14px 28px;
+  background: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.search-btn:hover { background: #15803d; }
 
 .landing-hint { text-align: center; padding: 60px 0; color: #94a3b8; font-size: 17px; }
-.landing-hint em { color: #64748b; font-style: normal; font-weight: 500; }
 
 .brand-layout {
   display: grid;
@@ -467,18 +578,21 @@ async function selectCompany(item) {
 
 .policy-row {
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
-  padding: 10px 0;
+  padding: 12px 0;
   border-bottom: 1px solid #f1f5f9;
 }
 
 .policy-row:last-child { border-bottom: none; }
 
-.policy-label { font-size: 14px; color: #334155; flex: 1; }
+.policy-label-group { display: flex; flex-direction: column; gap: 3px; flex: 1; }
 
-.policy-badge {
+.policy-label { font-size: 14px; color: #334155; font-weight: 500; }
+
+.policy-sublabel { font-size: 12px; color: #94a3b8; line-height: 1.4; }
+
+.policy-status {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 12px; font-weight: 600;
-  padding: 4px 12px; border-radius: 999px; flex-shrink: 0;
+  font-size: 13px; font-weight: 600; flex-shrink: 0;
 }
 
 .fibre-row {
@@ -495,21 +609,33 @@ async function selectCompany(item) {
 .brand-chip {
   background: #f1f5f9; color: #334155;
   padding: 6px 14px; border-radius: 999px;
-  font-size: 14px; display: flex; align-items: center; gap: 6px;
-}
-
-.chip-score {
-  background: #e2e8f0; color: #475569;
-  padding: 1px 7px; border-radius: 999px;
-  font-size: 12px; font-weight: 600;
+  font-size: 14px;
 }
 
 /* Data source */
 .data-source-box { background: #f5f9ff; border-color: #c7ddff; }
-.data-source-box p { color: #334155; line-height: 1.7; font-size: 14px; margin: 0; }
+.data-source-box p { color: #334155; line-height: 1.7; font-size: 14px; margin: 0 0 14px; }
+
+.source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: #1d4ed8;
+  color: white;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.source-link:hover { background: #1e40af; }
 
 @media (max-width: 900px) {
   .brand-layout { grid-template-columns: 1fr; }
   .brand-hero h1 { font-size: 34px; }
+  .brand-search-wrap { flex-direction: column; }
+  .search-btn { width: 100%; }
 }
 </style>

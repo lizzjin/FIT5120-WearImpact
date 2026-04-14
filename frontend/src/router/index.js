@@ -26,10 +26,10 @@ const routes = [
     component: KnowledgeView
   },
   {
-  path: '/brand-search',
-  name: 'brandSearch',
-  component: BrandSearchView
-}
+    path: '/brand-search',
+    name: 'brandSearch',
+    component: BrandSearchView
+  }
 ]
 
 const router = createRouter({
