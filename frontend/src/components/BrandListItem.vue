@@ -56,7 +56,9 @@ const avatarBg = computed(() => {
 
 // Clearbit logo with letter-avatar fallback
 const logoOk = ref(true)
-const logoSrc = computed(() => `https://logo.clearbit.com/${guessDomain(props.brand.company_name)}`)
+const logoSrc = computed(() =>
+  `https://img.logo.dev/${guessDomain(props.brand.company_name)}?token=pk_free&size=40`
+)
 
 watch(() => props.brand.company_name, () => { logoOk.value = true })
 
@@ -71,6 +73,10 @@ function guessDomain(name) {
     'Fast Retailing': 'fastretailing.com',
     'Kering': 'kering.com',
     'LVMH': 'lvmh.com',
+    'Adidas': 'adidas.com',
+    'Nike': 'nike.com',
+    'Puma': 'puma.com',
+    'Patagonia': 'patagonia.com',
   }
   if (overrides[name]) return overrides[name]
   return name.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com'

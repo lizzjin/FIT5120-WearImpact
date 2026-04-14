@@ -1,11 +1,11 @@
 <template>
   <div class="metric-row">
     <div class="metric-header">
-      <span class="metric-label">{{ label }}</span>
-      <span class="metric-value">
-        <span v-if="raw" class="metric-raw">{{ raw }}</span>
-        <strong :style="{ color: fillColor }">{{ value }}%</strong>
-      </span>
+      <div class="metric-labels">
+        <span class="metric-label">{{ label }}</span>
+        <span v-if="sublabel" class="metric-sublabel">{{ sublabel }}</span>
+      </div>
+      <strong class="metric-pct" :style="{ color: fillColor }">{{ value }}%</strong>
     </div>
     <div class="track">
       <div class="fill" :style="{ width: `${value}%`, background: fillColor }"></div>
@@ -18,8 +18,8 @@ import { computed } from 'vue'
 
 const props = defineProps({
   label: String,
+  sublabel: { type: String, default: null },
   value: Number,
-  raw: { type: String, default: null },
 })
 
 const fillColor = computed(() => {
@@ -32,57 +32,28 @@ const fillColor = computed(() => {
 </script>
 
 <style scoped>
-.metric-row {
-  margin-bottom: 18px;
-}
+.metric-row { margin-bottom: 18px; }
 
 .metric-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
+  align-items: flex-start;
   gap: 8px;
+  margin-bottom: 6px;
 }
 
-.metric-label {
-  font-size: 14px;
-  color: #334155;
-  flex: 1;
-}
+.metric-labels { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 
-.metric-value {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
+.metric-label { font-size: 14px; font-weight: 600; color: #1e293b; }
 
-.metric-value strong {
-  font-size: 14px;
-  font-weight: 700;
-  min-width: 38px;
-  text-align: right;
-}
+.metric-sublabel { font-size: 12px; color: #94a3b8; line-height: 1.4; }
 
-.metric-raw {
-  font-size: 12px;
-  color: #94a3b8;
-  background: #f1f5f9;
-  padding: 2px 7px;
-  border-radius: 6px;
-}
+.metric-pct { font-size: 15px; font-weight: 700; flex-shrink: 0; }
 
 .track {
-  width: 100%;
-  height: 8px;
-  background: #e5e7eb;
-  border-radius: 999px;
-  overflow: hidden;
+  width: 100%; height: 8px;
+  background: #e5e7eb; border-radius: 999px; overflow: hidden;
 }
 
-.fill {
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.5s ease;
-}
+.fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
 </style>
