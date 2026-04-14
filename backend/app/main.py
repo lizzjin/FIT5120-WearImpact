@@ -11,7 +11,7 @@ import redis.asyncio as aioredis
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import epic1_locations
+from app.api import epic1_locations, epic4_brands
 from app.core.config import settings
 from app.services import maps_service
 
@@ -67,6 +67,7 @@ app.add_middleware(
 )
 
 app.include_router(epic1_locations.router)
+app.include_router(epic4_brands.router)
 
 
 @app.get("/health")
