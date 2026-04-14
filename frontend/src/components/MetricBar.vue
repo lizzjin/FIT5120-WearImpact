@@ -3,8 +3,8 @@
     <div class="metric-header">
       <span class="metric-label">{{ label }}</span>
       <span class="metric-value">
-        <strong>{{ value }}%</strong>
-        <span v-if="raw" class="metric-raw">({{ raw }})</span>
+        <span v-if="raw" class="metric-raw">{{ raw }}</span>
+        <strong :style="{ color: fillColor }">{{ value }}%</strong>
       </span>
     </div>
     <div class="track">
@@ -33,7 +33,7 @@ const fillColor = computed(() => {
 
 <style scoped>
 .metric-row {
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .metric-header {
@@ -41,26 +41,35 @@ const fillColor = computed(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
+  gap: 8px;
 }
 
 .metric-label {
   font-size: 14px;
   color: #334155;
+  flex: 1;
 }
 
 .metric-value {
-  font-size: 13px;
-  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .metric-value strong {
+  font-size: 14px;
   font-weight: 700;
+  min-width: 38px;
+  text-align: right;
 }
 
 .metric-raw {
-  margin-left: 4px;
-  color: #94a3b8;
   font-size: 12px;
+  color: #94a3b8;
+  background: #f1f5f9;
+  padding: 2px 7px;
+  border-radius: 6px;
 }
 
 .track {

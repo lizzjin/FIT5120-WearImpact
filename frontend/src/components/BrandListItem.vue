@@ -4,8 +4,16 @@
     :class="{ active: isActive }"
     @click="$emit('select', brand)"
   >
-    <div class="brand-avatar" :style="{ background: avatarBg }">
-      {{ brand.company_name.charAt(0).toUpperCase() }}
+    <!-- Logo or letter avatar -->
+    <div class="brand-avatar" :style="!logoOk ? { background: avatarBg } : {}">
+      <img
+        v-if="logoOk"
+        :src="logoSrc"
+        :alt="brand.company_name"
+        class="logo-img"
+        @error="logoOk = false"
+      />
+      <span v-else>{{ brand.company_name.charAt(0).toUpperCase() }}</span>
     </div>
 
     <div class="brand-info">
@@ -14,7 +22,7 @@
         via {{ brand.matched_brand }}
       </p>
       <p class="score-line">
-        Score: <strong>{{ brand.overall_score }}</strong>
+        Ethical Score: <strong>{{ brand.overall_score }}</strong>
         <span class="score-label" :style="{ color: labelColor }">{{ brand.score_label }}</span>
       </p>
     </div>
@@ -22,7 +30,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 defineEmits(['select'])
 
@@ -41,12 +49,32 @@ const LABEL_COLORS = {
 
 const labelColor = computed(() => LABEL_COLORS[props.brand.score_label] || '#64748b')
 
-// Deterministic pastel background from company name
 const avatarBg = computed(() => {
   const palettes = ['#dbeafe', '#dcfce7', '#fef9c3', '#fce7f3', '#ede9fe', '#ffedd5']
-  const idx = props.brand.company_name.charCodeAt(0) % palettes.length
-  return palettes[idx]
+  return palettes[props.brand.company_name.charCodeAt(0) % palettes.length]
 })
+
+// Clearbit logo with letter-avatar fallback
+const logoOk = ref(true)
+const logoSrc = computed(() => `https://logo.clearbit.com/${guessDomain(props.brand.company_name)}`)
+
+watch(() => props.brand.company_name, () => { logoOk.value = true })
+
+function guessDomain(name) {
+  const overrides = {
+    'H&M': 'hm.com', 'H&M Group': 'hm.com',
+    'Inditex': 'inditex.com',
+    'Levi Strauss & Co': 'levi.com',
+    'PVH Corp': 'pvh.com',
+    'VF Corporation': 'vfc.com',
+    'Hanesbrands': 'hanes.com',
+    'Fast Retailing': 'fastretailing.com',
+    'Kering': 'kering.com',
+    'LVMH': 'lvmh.com',
+  }
+  if (overrides[name]) return overrides[name]
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com'
+}
 </script>
 
 <style scoped>
@@ -64,18 +92,13 @@ const avatarBg = computed(() => {
   transition: background 0.15s;
 }
 
-.brand-item:hover {
-  background: #f8fafb;
-}
-
-.brand-item.active {
-  background: #edf5ef;
-}
+.brand-item:hover { background: #f8fafb; }
+.brand-item.active { background: #edf5ef; }
 
 .brand-avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,6 +106,16 @@ const avatarBg = computed(() => {
   font-size: 18px;
   color: #334155;
   flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+  background: white;
 }
 
 .brand-info h4 {
