@@ -8,6 +8,7 @@
       type="text"
       placeholder="Search for a brand or company..."
       @input="onInput"
+      @keyup.enter="onEnter"
     />
     <button v-if="inputValue" class="clear-btn" @click="clear">✕</button>
   </div>
@@ -23,7 +24,6 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'search'])
 
 const inputValue = ref(props.modelValue)
-let debounceTimer = null
 
 watch(() => props.modelValue, (val) => {
   inputValue.value = val
@@ -31,17 +31,16 @@ watch(() => props.modelValue, (val) => {
 
 function onInput() {
   emit('update:modelValue', inputValue.value)
-  clearTimeout(debounceTimer)
-  // 300ms debounce per Epic 4 Step 1 spec
-  debounceTimer = setTimeout(() => {
-    emit('search', inputValue.value)
-  }, 300)
+}
+
+function onEnter() {
+  emit('search', inputValue.value)
 }
 
 function clear() {
   inputValue.value = ''
   emit('update:modelValue', '')
-  emit('search', '')
+  // Do NOT emit 'search' — only Search button / Enter key triggers a search
 }
 </script>
 

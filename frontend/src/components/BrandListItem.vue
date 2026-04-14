@@ -57,7 +57,7 @@ const avatarBg = computed(() => {
 // Clearbit logo with letter-avatar fallback
 const logoOk = ref(true)
 const logoSrc = computed(() =>
-  `https://img.logo.dev/${guessDomain(props.brand.company_name)}?token=pk_free&size=40`
+  `https://img.logo.dev/${guessDomain(props.brand.company_name)}?token=pk_LbFI27UJRDWnSoDCC_4GYA&size=40`
 )
 
 watch(() => props.brand.company_name, () => { logoOk.value = true })
