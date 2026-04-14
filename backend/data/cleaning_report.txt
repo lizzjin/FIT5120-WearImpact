@@ -1,0 +1,53 @@
+=== Data Cleaning Report ===
+
+[brands] 372 rows processed.
+[brands] 15 company name corrections:
+  brands: COMPANY 'APG& CO' → 'APG & Co'
+  brands: COMPANY 'APG& CO' → 'APG & Co'
+  brands: COMPANY 'APG& CO' → 'APG & Co'
+  brands: COMPANY 'Масрас' → 'Macpac'
+  brands: COMPANY 'On Holding AG' → 'On Holding'
+  brands: COMPANY 'Overland Footwear Group' → 'Overland'
+  brands: COMPANY 'Overland Footwear Group' → 'Overland'
+  brands: COMPANY 'Overland Footwear Group' → 'Overland'
+  brands: COMPANY 'Stüssy' → 'Stussy'
+  brands: COMPANY 'Universal Store' → 'Universal Store Holdings Ltd'
+  brands: COMPANY 'Universal Store' → 'Universal Store Holdings Ltd'
+  brands: COMPANY 'Universal Store' → 'Universal Store Holdings Ltd'
+  brands: COMPANY 'Universal Store' → 'Universal Store Holdings Ltd'
+  brands: COMPANY 'Universal Store' → 'Universal Store Holdings Ltd'
+  brands: COMPANY 'Universal Store' → 'Universal Store Holdings Ltd'
+
+[companies] 123 rows processed.
+[companies] 18 '<1' values replaced with '0':
+  2XU | Tracing&Risk_score(all stage Production ) : '<1' → '0'
+  Accent Group | environmental_sustainability_score(score_out_of_21): '<1' → '0'
+  Ally Fashion | environmental_sustainability_score(score_out_of_21): '<1' → '0'
+  Bec & Bridge | Tracing&Risk_score(all stage Production ) : '<1' → '0'
+  Bec & Bridge | environmental_sustainability_score(score_out_of_21): '<1' → '0'
+  Boardriders | Tracing&Risk_score(all stage Production ) : '<1' → '0'
+  Brand Collective (Apparel) | environmental_sustainability_score(score_out_of_21): '<1' → '0'
+  City Beach | Tracing&Risk_score(all stage Production ) : '<1' → '0'
+  Cue Clothing Co. | environmental_sustainability_score(score_out_of_21): '<1' → '0'
+  Culture Kings | environmental_sustainability_score(score_out_of_21): '<1' → '0'
+  General Pants Group | environmental_sustainability_score(score_out_of_21): '<1' → '0'
+  Hot Springs | environmental_sustainability_score(score_out_of_21): '<1' → '0'
+  Industrie | environmental_sustainability_score(score_out_of_21): '<1' → '0'
+  Jeanswest | environmental_sustainability_score(score_out_of_21): '<1' → '0'
+  Seafolly | environmental_sustainability_score(score_out_of_21): '<1' → '0'
+  Spotlight Group | Tracing&Risk_score(all stage Production ) : '<1' → '0'
+  TJX Australia | Tracing&Risk_score(all stage Production ) : '<1' → '0'
+  Vestito (TS14+) | environmental_sustainability_score(score_out_of_21): '<1' → '0'
+
+[companies] product_category='footwear' assigned to 3 companies:
+  Adidas (Footwear)
+  Brand Collective (Footwear)
+  New Balance (Footwear)
+
+[verify] Brands with unresolved company join: 0
+  All brands resolve correctly to a company record.
+
+[output] brands_cleaned.csv  → 372 rows
+[output] companies_cleaned.csv → 123 rows
+
+Done.

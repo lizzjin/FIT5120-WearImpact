@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     # Place details cache TTL: 24 hours keeps Google API quota low
     place_details_cache_ttl: int = 86400
 
+    # PostgreSQL connection URL — used by Epic 4 brand service (asyncpg driver)
+    database_url: str = ""
+
     # CORS origins allowed to call the backend (comma-separated in .env)
     cors_origins: list[str] = [
         "http://localhost:5173",
