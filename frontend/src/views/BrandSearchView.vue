@@ -67,8 +67,15 @@
             <!-- Header card -->
             <div class="detail-card brand-summary">
               <div class="brand-summary-header">
-                <div class="brand-avatar-large" :style="{ background: avatarBg }">
-                  {{ companyDetail.company_name.charAt(0).toUpperCase() }}
+                <div class="brand-avatar-large" :style="!detailLogoOk ? { background: avatarBg } : {}">
+                  <img
+                    v-if="detailLogoOk"
+                    :src="detailLogoSrc"
+                    :alt="companyDetail.company_name"
+                    class="detail-logo-img"
+                    @error="detailLogoOk = false"
+                  />
+                  <span v-else>{{ companyDetail.company_name.charAt(0).toUpperCase() }}</span>
                 </div>
                 <div>
                   <h2>{{ companyDetail.company_name }}</h2>
@@ -92,17 +99,17 @@
               <MetricBar
                 label="Governance & Policies"
                 :value="Math.round((companyDetail.governance_score / 6) * 100)"
-                :raw="`${companyDetail.governance_score} / 6`"
+                :raw="`${companyDetail.governance_score} / 6 pts`"
               />
               <MetricBar
                 label="Supply Chain Tracing"
                 :value="Math.round((companyDetail.tracing_score / 15) * 100)"
-                :raw="`${companyDetail.tracing_score} / 15`"
+                :raw="`${companyDetail.tracing_score} / 15 pts`"
               />
               <MetricBar
                 label="Environmental Sustainability"
                 :value="Math.round((companyDetail.env_score / 21) * 100)"
-                :raw="`${companyDetail.env_score} / 21`"
+                :raw="`${companyDetail.env_score} / 21 pts`"
               />
             </div>
 
@@ -165,7 +172,7 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, ref } from 'vue'
+import { computed, defineComponent, h, ref, watch } from 'vue'
 import BrandListItem from '../components/BrandListItem.vue'
 import BrandSearchBar from '../components/BrandSearchBar.vue'
 import MetricBar from '../components/MetricBar.vue'
@@ -173,20 +180,26 @@ import Navbar from '../components/Navbar.vue'
 import { fetchCompanyDetail, searchBrands } from '../services/brandService'
 
 // ── Inline PolicyRow component ──────────────────────────────────────────────
-const POLICY_STYLES = {
-  Yes: { bg: '#dcfce7', color: '#16a34a' },
-  No: { bg: '#fee2e2', color: '#dc2626' },
-  Partial: { bg: '#fef9c3', color: '#ca8a04' },
+const POLICY_CONFIG = {
+  Yes:     { icon: '✓', bg: '#f0fdf4', border: '#bbf7d0', color: '#15803d', text: 'Yes' },
+  No:      { icon: '✕', bg: '#fff1f2', border: '#fecdd3', color: '#be123c', text: 'No' },
+  Partial: { icon: '◐', bg: '#fffbeb', border: '#fde68a', color: '#92400e', text: 'Partial' },
 }
 
 const PolicyRow = defineComponent({
   props: { label: String, value: String },
   setup(props) {
     return () => {
-      const style = POLICY_STYLES[props.value] || { bg: '#f1f5f9', color: '#64748b' }
+      const cfg = POLICY_CONFIG[props.value] || { icon: '?', bg: '#f8fafc', border: '#e2e8f0', color: '#64748b', text: props.value }
       return h('div', { class: 'policy-row' }, [
         h('span', { class: 'policy-label' }, props.label),
-        h('span', { class: 'policy-badge', style: { background: style.bg, color: style.color } }, props.value),
+        h('span', {
+          class: 'policy-badge',
+          style: { background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color }
+        }, [
+          h('span', { class: 'policy-icon' }, cfg.icon),
+          h('span', {}, cfg.text),
+        ]),
       ])
     }
   },
@@ -231,6 +244,29 @@ const avatarBg = computed(() => {
   const palettes = ['#dbeafe', '#dcfce7', '#fef9c3', '#fce7f3', '#ede9fe', '#ffedd5']
   return palettes[companyDetail.value.company_name.charCodeAt(0) % palettes.length]
 })
+
+// Clearbit logo for the detail panel
+const detailLogoOk = ref(true)
+const detailLogoSrc = computed(() =>
+  companyDetail.value ? `https://logo.clearbit.com/${guessDomain(companyDetail.value.company_name)}` : ''
+)
+watch(companyDetail, () => { detailLogoOk.value = true })
+
+function guessDomain(name) {
+  const overrides = {
+    'H&M': 'hm.com', 'H&M Group': 'hm.com',
+    'Inditex': 'inditex.com',
+    'Levi Strauss & Co': 'levi.com',
+    'PVH Corp': 'pvh.com',
+    'VF Corporation': 'vfc.com',
+    'Hanesbrands': 'hanes.com',
+    'Fast Retailing': 'fastretailing.com',
+    'Kering': 'kering.com',
+    'LVMH': 'lvmh.com',
+  }
+  if (overrides[name]) return overrides[name]
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com'
+}
 
 async function handleSearch(query) {
   const q = query.trim()
@@ -448,7 +484,7 @@ async function selectCompany(item) {
 .brand-avatar-large {
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -456,6 +492,16 @@ async function selectCompany(item) {
   font-size: 24px;
   color: #334155;
   flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.detail-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 6px;
+  background: white;
 }
 
 .brand-summary-header h2 {
@@ -519,7 +565,7 @@ async function selectCompany(item) {
 .policy-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 16px;
 }
 
@@ -528,6 +574,8 @@ async function selectCompany(item) {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f8fafc;
 }
 
 .policy-label {
@@ -537,11 +585,20 @@ async function selectCompany(item) {
 }
 
 .policy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 12px;
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 999px;
   flex-shrink: 0;
+}
+
+.policy-icon {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .fibre-row {
