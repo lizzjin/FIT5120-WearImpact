@@ -5,9 +5,21 @@
         <span class="metric-label">{{ label }}</span>
         <span v-if="sublabel" class="metric-sublabel">{{ sublabel }}</span>
       </div>
-      <strong class="metric-pct" :style="{ color: fillColor }">{{ value }}%</strong>
+      <strong class="metric-pct" :style="{ color: fillColor }">
+        {{ value }}%
+        <span v-if="rawScore != null && maxScore != null" class="metric-raw">
+          ({{ rawScore }}/{{ maxScore }} pts)
+        </span>
+      </strong>
     </div>
-    <div class="track">
+    <div
+      class="track"
+      role="progressbar"
+      :aria-valuenow="value"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      :aria-label="`${label} score: ${value}%`"
+    >
       <div class="fill" :style="{ width: `${value}%`, background: fillColor }"></div>
     </div>
   </div>
@@ -20,6 +32,8 @@ const props = defineProps({
   label: String,
   sublabel: { type: String, default: null },
   value: Number,
+  rawScore: { type: Number, default: null },
+  maxScore: { type: Number, default: null },
 })
 
 const fillColor = computed(() => {
@@ -46,14 +60,40 @@ const fillColor = computed(() => {
 
 .metric-label { font-size: 14px; font-weight: 600; color: #1e293b; }
 
-.metric-sublabel { font-size: 12px; color: #94a3b8; line-height: 1.4; }
+.metric-sublabel { font-size: 12px; color: #64748b; line-height: 1.4; }
 
-.metric-pct { font-size: 15px; font-weight: 700; flex-shrink: 0; }
-
-.track {
-  width: 100%; height: 8px;
-  background: #e5e7eb; border-radius: 999px; overflow: hidden;
+.metric-pct {
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
 }
 
-.fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+.metric-raw {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.track {
+  width: 100%;
+  height: 8px;
+  background: #dcfce7;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+}
 </style>
