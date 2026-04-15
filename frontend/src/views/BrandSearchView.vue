@@ -194,7 +194,7 @@
                 rel="noopener noreferrer"
                 class="source-link"
               >
-                View Full Report →
+                View Full Report <ArrowRight :size="15" :stroke-width="2.5" class="cta-arrow" />
               </a>
             </div>
           </template>
@@ -206,16 +206,40 @@
         </section>
       </div>
 
-      <!-- Loading featured brands on first mount -->
-      <div v-else class="landing-hint">
-        <p>Loading featured brands…</p>
+      <!-- Loading featured brands on first mount — full-layout skeleton -->
+      <div v-else class="brand-layout landing-skeleton">
+        <!-- Left panel skeleton -->
+        <div class="brand-list-panel">
+          <div class="panel-title">
+            <div class="sk sk-title-bar"></div>
+          </div>
+          <div class="skeleton-list">
+            <div v-for="n in 6" :key="n" class="skeleton-item">
+              <div class="sk sk-avatar"></div>
+              <div class="sk-lines">
+                <div class="sk sk-line-long"></div>
+                <div class="sk sk-line-short"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right panel skeleton -->
+        <div class="brand-detail-panel">
+          <div class="detail-skeleton">
+            <div class="sk sk-detail-header"></div>
+            <div class="sk sk-detail-body"></div>
+            <div class="sk sk-detail-body"></div>
+            <div class="sk sk-detail-body-sm"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { CheckCircle2, MinusCircle, XCircle } from 'lucide-vue-next'
+import { ArrowRight, CheckCircle2, MinusCircle, XCircle } from 'lucide-vue-next'
 import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
 import BrandListItem from '../components/BrandListItem.vue'
 import BrandSearchBar from '../components/BrandSearchBar.vue'
@@ -363,8 +387,8 @@ onMounted(async () => {
     if (companies.length > 0) {
       await selectCompany(companies[0])
     }
-  } catch (err) {
-    console.error('Failed to load featured brands:', err)
+  } catch {
+    // silently fall through — isFeaturedLoading will be cleared in finally
   } finally {
     isFeaturedLoading.value = false
   }
@@ -399,8 +423,7 @@ async function handleSearch(query) {
     if (searchResults.value.length > 0) {
       await selectCompany(searchResults.value[0])
     }
-  } catch (err) {
-    console.error('Brand search error:', err)
+  } catch {
     searchResults.value = []
     emptyMessage.value = 'Search failed. Please try again.'
   } finally {
@@ -415,8 +438,8 @@ async function selectCompany(item) {
 
   try {
     companyDetail.value = await fetchCompanyDetail(item.company_id)
-  } catch (err) {
-    console.error('Company detail error:', err)
+  } catch {
+    // detail stays null — the panel will show the no-selection prompt
   } finally {
     isLoadingDetail.value = false
   }
@@ -485,7 +508,6 @@ async function selectCompany(item) {
 
 .search-btn:hover { background: #15803d; }
 
-.landing-hint { text-align: center; padding: 60px 0; color: #94a3b8; font-size: 17px; }
 
 .brand-layout {
   display: grid;
@@ -558,6 +580,10 @@ async function selectCompany(item) {
 .detail-skeleton { display: flex; flex-direction: column; gap: 18px; }
 .sk-detail-header { height: 140px; border-radius: 20px; }
 .sk-detail-body { height: 120px; border-radius: 20px; }
+.sk-detail-body-sm { height: 80px; border-radius: 20px; }
+.sk-title-bar { height: 16px; width: 120px; border-radius: 6px; }
+
+.landing-skeleton { pointer-events: none; }
 
 .empty-state, .no-selection { padding: 32px 20px; text-align: center; color: #94a3b8; font-size: 15px; }
 
@@ -630,25 +656,6 @@ async function selectCompany(item) {
 /* Policy rows */
 .policy-list { display: flex; flex-direction: column; gap: 0; margin-bottom: 16px; }
 
-.policy-row {
-  display: flex; justify-content: space-between; align-items: center; gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.policy-row:last-child { border-bottom: none; }
-
-.policy-label-group { display: flex; flex-direction: column; gap: 3px; flex: 1; }
-
-.policy-label { font-size: 14px; color: #334155; font-weight: 500; }
-
-.policy-sublabel { font-size: 12px; color: #94a3b8; line-height: 1.4; }
-
-.policy-status {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 13px; font-weight: 600; flex-shrink: 0;
-}
-
 .fibre-row {
   display: flex; justify-content: space-between; align-items: center;
   padding-top: 12px; border-top: 1px solid #f1f5f9;
@@ -685,6 +692,14 @@ async function selectCompany(item) {
 }
 
 .source-link:hover { background: #1e40af; }
+
+.source-link .cta-arrow {
+  transition: transform 150ms ease;
+}
+
+.source-link:hover .cta-arrow {
+  transform: translateX(3px);
+}
 
 @media (max-width: 900px) {
   .brand-layout { grid-template-columns: 1fr; }

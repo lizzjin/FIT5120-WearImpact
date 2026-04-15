@@ -6,11 +6,11 @@
  *   - fetchPlaceDetails()  → GET /api/locations/details/{place_id}  (Step 4)
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 // Melbourne CBD used as fallback when geolocation is denied or unavailable
-const MELBOURNE_CBD_LAT = -37.8136
-const MELBOURNE_CBD_LNG = 144.9631
+const MELBOURNE_CBD_LAT = -37.8136;
+const MELBOURNE_CBD_LNG = 144.9631;
 
 /**
  * Request the user's current GPS coordinates from the browser.
@@ -23,8 +23,12 @@ const MELBOURNE_CBD_LNG = 144.9631
 export function getUserCoordinates() {
   return new Promise((resolve) => {
     if (!navigator.geolocation) {
-      resolve({ lat: MELBOURNE_CBD_LAT, lng: MELBOURNE_CBD_LNG, isFallback: true })
-      return
+      resolve({
+        lat: MELBOURNE_CBD_LAT,
+        lng: MELBOURNE_CBD_LNG,
+        isFallback: true,
+      });
+      return;
     }
 
     navigator.geolocation.getCurrentPosition(
@@ -33,15 +37,23 @@ export function getUserCoordinates() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
           isFallback: false,
-        })
+        });
       },
       () => {
         // User denied permission or position unavailable — use fallback
-        resolve({ lat: MELBOURNE_CBD_LAT, lng: MELBOURNE_CBD_LNG, isFallback: true })
+        resolve({
+          lat: MELBOURNE_CBD_LAT,
+          lng: MELBOURNE_CBD_LNG,
+          isFallback: true,
+        });
       },
-      { timeout: 8000, maximumAge: 60000 }
-    )
-  })
+      {
+        timeout: 12000,
+        maximumAge: 0,
+        enableHighAccuracy: true,
+      },
+    );
+  });
 }
 
 /**
@@ -62,20 +74,20 @@ export async function fetchNearbyPlaces({ lat, lng, radiusKm = 5 }) {
     lat: lat.toString(),
     lng: lng.toString(),
     radius_km: radiusKm.toString(),
-  })
+  });
 
-  const response = await fetch(`${API_BASE}/api/locations/nearby?${params}`)
+  const response = await fetch(`${API_BASE}/api/locations/nearby?${params}`);
 
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}))
+    const errorBody = await response.json().catch(() => ({}));
     throw new Error(
       errorBody?.detail?.detail ||
-      errorBody?.detail ||
-      `Nearby search failed (HTTP ${response.status})`
-    )
+        errorBody?.detail ||
+        `Nearby search failed (HTTP ${response.status})`,
+    );
   }
 
-  return response.json()
+  return response.json();
 }
 
 /**
@@ -90,17 +102,17 @@ export async function fetchNearbyPlaces({ lat, lng, radiusKm = 5 }) {
  */
 export async function fetchPlaceDetails(placeId) {
   const response = await fetch(
-    `${API_BASE}/api/locations/details/${encodeURIComponent(placeId)}`
-  )
+    `${API_BASE}/api/locations/details/${encodeURIComponent(placeId)}`,
+  );
 
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}))
+    const errorBody = await response.json().catch(() => ({}));
     throw new Error(
       errorBody?.detail?.detail ||
-      errorBody?.detail ||
-      `Place details fetch failed (HTTP ${response.status})`
-    )
+        errorBody?.detail ||
+        `Place details fetch failed (HTTP ${response.status})`,
+    );
   }
 
-  return response.json()
+  return response.json();
 }
