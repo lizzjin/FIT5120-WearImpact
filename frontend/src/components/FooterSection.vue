@@ -1,27 +1,27 @@
 <template>
   <footer class="footer">
     <div class="footer-grid">
-      <div>
-        <h2>WearImpact</h2>
+      <div class="footer-brand">
+        <h2><span class="logo-wear">Wear</span><span class="logo-impact">Impact</span></h2>
         <p>
-Supporting sustainable fashion through local action and learning.
+          Helping Australians make more informed, sustainable fashion choices — one purchase at a time.
         </p>
       </div>
 
       <div>
         <h4>Tools</h4>
         <ul>
-          <li><router-link to="/eco-shop">Eco-Shop</router-link></li>
+          <li><router-link to="/eco-shop">Eco-Shop Navigator</router-link></li>
+          <li><router-link to="/brand-search">Brand Search</router-link></li>
           <li><router-link to="/knowledge">Knowledge Hub</router-link></li>
-          <li><router-link to="/about">About</router-link></li>
         </ul>
       </div>
 
       <div>
         <h4>About</h4>
-        <p>
-Helping users find local eco-shop options and build sustainable fashion awareness.
-        </p>
+        <ul>
+          <li><router-link to="/about">About WearImpact</router-link></li>
+        </ul>
       </div>
     </div>
 
@@ -42,36 +42,65 @@ Helping users find local eco-shop options and build sustainable fashion awarenes
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.3fr 1fr 1.2fr;
+  grid-template-columns: 1.3fr 1fr 1fr;
   gap: 40px;
   margin-bottom: 32px;
 }
 
-.footer h2,
-.footer h4 {
+.footer h2 {
+  font-size: 22px;
+  font-weight: 800;
   margin-bottom: 16px;
 }
 
-.footer p,
-.footer li,
-.footer a {
-  color: #d7e0ee;
-  line-height: 1.7;
-  text-decoration: none;
+.logo-wear   { color: #16a34a; }
+.logo-impact { color: white; }
+
+.footer h4 {
+  color: white;
+  margin-bottom: 16px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .footer-brand p {
+  color: #d7e0ee;
+  line-height: 1.7;
   max-width: 420px;
+  font-size: 15px;
 }
+
 .footer ul {
   list-style: none;
   padding: 0;
+  margin: 0;
+}
+
+.footer ul li {
+  margin-bottom: 8px;
+}
+
+.footer a {
+  color: #d7e0ee;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 150ms ease;
+}
+
+.footer a:hover {
+  color: #86efac;
 }
 
 .footer-bottom {
   border-top: 1px solid rgba(255, 255, 255, 0.15);
   padding-top: 20px;
   text-align: center;
+}
+
+.footer-bottom p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
 }
 
 @media (max-width: 900px) {

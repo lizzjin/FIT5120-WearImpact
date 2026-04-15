@@ -3,7 +3,10 @@
     class="location-card"
     :class="{ selected: isSelected }"
     @click="$emit('select', place)"
+    @keydown.enter="$emit('select', place)"
+    @keydown.space.prevent="$emit('select', place)"
     role="button"
+    tabindex="0"
     :aria-pressed="isSelected"
   >
     <div class="card-header">
@@ -16,7 +19,7 @@
       {{ place.distance_km }} km away
     </p>
 
-    <p class="hint">Click to view details &amp; directions</p>
+    <p v-if="!isSelected" class="hint">Click to view details &amp; directions</p>
   </div>
 </template>
 
@@ -25,16 +28,8 @@ import { computed } from 'vue'
 import { MapPin } from 'lucide-vue-next'
 
 const props = defineProps({
-  /** Place object from GET /api/locations/nearby — shape: {place_id, name, type, lat, lng, distance_km} */
-  place: {
-    type: Object,
-    required: true,
-  },
-  /** Whether this card is the currently selected/active one */
-  isSelected: {
-    type: Boolean,
-    default: false,
-  },
+  place: { type: Object, required: true },
+  isSelected: { type: Boolean, default: false },
 })
 
 defineEmits(['select'])
@@ -67,7 +62,13 @@ const typeLabel = computed(() => TYPE_LABELS[props.place.type] || props.place.ty
 
 .location-card.selected {
   border-color: #16a34a;
+  border-left: 4px solid #16a34a;
   background: #f0fdf4;
+}
+
+.location-card:focus-visible {
+  outline: 2px solid #16a34a;
+  outline-offset: 2px;
 }
 
 /* Header row */

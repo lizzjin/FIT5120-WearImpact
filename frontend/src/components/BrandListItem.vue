@@ -99,7 +99,10 @@ function guessDomain(name) {
 }
 
 .brand-item:hover { background: #f8fafb; }
-.brand-item.active { background: #edf5ef; }
+.brand-item.active {
+  background: #edf5ef;
+  border-left: 3px solid #16a34a;
+}
 
 .brand-avatar {
   width: 40px;

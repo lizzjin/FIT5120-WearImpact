@@ -3,18 +3,19 @@
     <Navbar />
 
     <div class="page-container">
-      <section class="brand-hero">
-        <h1>Brand Transparency</h1>
-        <p>
-          Search clothing brands and see how they score on supply chain transparency,
-          environmental sustainability, and ethical governance.
-        </p>
-      </section>
+      <!-- §4.2 Inline page header (no background box) -->
+      <div class="brand-page-header">
+        <h1>Brand Sustainability Scores</h1>
+        <p>Search clothing brands to see their supply chain transparency, environmental, and governance scores.</p>
+      </div>
 
       <!-- Search bar + button -->
-      <div class="brand-search-wrap">
+      <div class="brand-search-wrap" role="search">
         <BrandSearchBar v-model="searchQuery" @search="handleSearch" />
-        <button class="search-btn" @click="doSearch">Search</button>
+        <button class="search-btn" @click="doSearch">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Search
+        </button>
       </div>
 
       <!-- Main layout: always visible once featured brands loaded -->
@@ -56,7 +57,7 @@
         </aside>
 
         <!-- Right: detail panel -->
-        <section class="brand-detail-panel">
+        <section class="brand-detail-panel" aria-live="polite">
           <!-- Skeleton while loading detail -->
           <div v-if="isLoadingDetail" class="detail-skeleton">
             <div class="sk sk-detail-header"></div>
@@ -86,13 +87,15 @@
               </div>
 
               <div class="score-row">
-                <div class="score-badge" :style="{ background: scoreBg, color: scoreColor }">
-                  <span class="score-number">{{ companyDetail.overall_score }}</span>
-                  <span class="score-max">/100</span>
+                <div class="score-badge" :style="{ background: scoreBg, color: scoreColor, borderColor: scoreColor + '4d' }">
+                  <div class="score-badge-inner">
+                    <span class="score-number">{{ companyDetail.overall_score }}</span>
+                    <span class="score-max">/100</span>
+                  </div>
                   <span class="score-label-text">{{ companyDetail.score_label }}</span>
                 </div>
-                <p class="score-desc">{{ scoreDescription }}</p>
               </div>
+              <p class="score-desc">{{ scoreDescription }}</p>
             </div>
 
             <!-- Dimension scores -->
@@ -104,18 +107,24 @@
               </p>
               <MetricBar
                 label="Governance & Policies"
-                sublabel="Supplier code of conduct, senior accountability (max 6 pts)"
+                sublabel="Supplier code of conduct, senior accountability"
                 :value="Math.round((companyDetail.governance_score / 6) * 100)"
+                :raw-score="companyDetail.governance_score"
+                :max-score="6"
               />
               <MetricBar
                 label="Supply Chain Tracing"
-                sublabel="Visibility across all production stages (max 15 pts)"
+                sublabel="Visibility across all production stages"
                 :value="Math.round((companyDetail.tracing_score / 15) * 100)"
+                :raw-score="companyDetail.tracing_score"
+                :max-score="15"
               />
               <MetricBar
                 label="Environmental Sustainability"
-                sublabel="Fibre impact, emissions targets, sustainable materials (max 21 pts)"
+                sublabel="Fibre impact, emissions targets, sustainable materials"
                 :value="Math.round((companyDetail.env_score / 21) * 100)"
+                :raw-score="companyDetail.env_score"
+                :max-score="21"
               />
             </div>
 
@@ -229,13 +238,13 @@ const PolicyRow = defineComponent({
       return h('div', {
         style: {
           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-          gap: '12px', padding: '12px 0', borderBottom: '1px solid #f1f5f9',
+          gap: '12px', padding: '12px 0', borderBottom: '1px solid #e5e7eb',
         },
       }, [
         h('div', { style: { display: 'flex', flexDirection: 'column', gap: '3px', flex: '1' } }, [
           h('span', { style: { fontSize: '14px', color: '#1e293b', fontWeight: '600' } }, props.label),
           props.sublabel
-            ? h('span', { style: { fontSize: '12px', color: '#94a3b8', lineHeight: '1.4' } }, props.sublabel)
+            ? h('span', { style: { fontSize: '13px', color: '#64748b', lineHeight: '1.4' } }, props.sublabel)
             : null,
         ]),
         h('span', {
@@ -427,16 +436,25 @@ async function selectCompany(item) {
   padding: 24px;
 }
 
-.brand-hero {
-  background: #edf5ef;
-  border-radius: 24px;
-  padding: 40px;
-  margin-bottom: 24px;
-  text-align: center;
+/* §4.2 Inline page header */
+.brand-page-header {
+  margin-bottom: 16px;
 }
 
-.brand-hero h1 { font-size: 48px; color: #0f172a; margin-bottom: 12px; }
-.brand-hero p { font-size: 18px; color: #475569; line-height: 1.6; max-width: 760px; margin: 0 auto; }
+.brand-page-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.brand-page-header p {
+  font-size: 15px;
+  color: #64748b;
+  max-width: 700px;
+  line-height: 1.5;
+  margin: 0;
+}
 
 /* Search bar + button row */
 .brand-search-wrap {
@@ -449,6 +467,9 @@ async function selectCompany(item) {
 .brand-search-wrap > :first-child { flex: 1; }
 
 .search-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 14px 28px;
   background: #16a34a;
   color: white;
@@ -494,7 +515,28 @@ async function selectCompany(item) {
 }
 
 .result-count { font-weight: 400; color: #94a3b8; font-size: 14px; }
-.brand-list { max-height: 600px; overflow-y: auto; }
+.brand-list {
+  max-height: 600px;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Bottom fade hint for scrollability */
+.brand-list-panel {
+  position: relative;
+}
+
+.brand-list-panel::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(transparent, white);
+  pointer-events: none;
+  border-radius: 0 0 20px 20px;
+}
 
 /* Skeletons */
 .skeleton-list { padding: 8px 0; }
@@ -553,22 +595,34 @@ async function selectCompany(item) {
   padding: 3px 10px; border-radius: 999px; font-weight: 500;
 }
 
-.score-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.score-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
 
 .score-badge {
-  display: inline-flex; align-items: baseline; gap: 4px;
-  padding: 10px 18px; border-radius: 12px; flex-shrink: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 20px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  flex-shrink: 0;
 }
 
-.score-number { font-size: 28px; font-weight: 800; line-height: 1; }
+.score-badge-inner {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.score-number { font-size: 36px; font-weight: 800; line-height: 1; }
 .score-max { font-size: 16px; font-weight: 500; opacity: 0.7; }
-.score-label-text { font-size: 15px; font-weight: 700; margin-left: 8px; }
-.score-desc { color: #475569; font-size: 14px; margin: 0; flex: 1; }
+.score-label-text { font-size: 14px; font-weight: 700; }
+.score-desc { color: #475569; font-size: 15px; line-height: 1.6; margin: 0; }
 
 /* Scores section description */
 .scores-desc {
   font-size: 13px;
-  color: #94a3b8;
+  color: #64748b;
   margin-bottom: 20px;
   line-height: 1.5;
 }
@@ -634,8 +688,8 @@ async function selectCompany(item) {
 
 @media (max-width: 900px) {
   .brand-layout { grid-template-columns: 1fr; }
-  .brand-hero h1 { font-size: 34px; }
+  .brand-page-header h1 { font-size: 26px; }
   .brand-search-wrap { flex-direction: column; }
-  .search-btn { width: 100%; }
+  .search-btn { width: 100%; justify-content: center; }
 }
 </style>

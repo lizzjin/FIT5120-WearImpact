@@ -2,47 +2,64 @@
   <div class="eco-page">
     <Navbar />
     <div class="page-container">
-      <section class="eco-hero">
-        <h1>Local Eco-Shop Navigator</h1>
-        <p>
-          Find nearby second-hand shops, donation points, and textile recycling
-          locations in your area.
-        </p>
-        <p v-if="isFallbackLocation" class="fallback-notice">
-          Showing results near Melbourne CBD — allow location access for personalised results.
+      <section class="eco-hero" role="search">
+        <p class="hero-eyebrow">NEARBY ECO-LOCATIONS</p>
+        <h1>Find Eco-Friendly Fashion Near You</h1>
+        <p class="hero-subtitle">
+          Discover second-hand shops, donation points, and textile
+          recycling — all on one map.
         </p>
 
         <!-- AC 1.1.1 — manual address input with Google Places Autocomplete -->
         <div class="address-search-row">
-          <input
-            ref="addressSearchInput"
-            type="text"
-            class="address-input"
-            placeholder="Or type a suburb or address to search…"
-            autocomplete="off"
-          />
+          <div class="address-input-wrap">
+            <Search class="address-search-icon" :size="16" :stroke-width="2" />
+            <input
+              ref="addressSearchInput"
+              type="text"
+              class="address-input"
+              placeholder="Type a suburb or address to search…"
+              autocomplete="off"
+            />
+          </div>
+          <p class="address-hint">or allow location access for automatic results</p>
         </div>
+
+        <p v-if="isFallbackLocation" class="fallback-notice">
+          Showing results near Melbourne CBD — allow location access for personalised results.
+        </p>
       </section>
 
       <!-- Radius selector + type filters -->
       <div class="controls-row">
         <label class="radius-label">
           Search radius:
-          <select v-model="radiusKm" @change="loadPlaces" class="radius-select">
-            <option :value="2">2 km</option>
-            <option :value="5">5 km</option>
-            <option :value="10">10 km</option>
-            <option :value="20">20 km</option>
-          </select>
+          <div class="select-wrap">
+            <select v-model="radiusKm" @change="loadPlaces" class="radius-select">
+              <option :value="2">2 km</option>
+              <option :value="5">5 km</option>
+              <option :value="10">10 km</option>
+              <option :value="20">20 km</option>
+            </select>
+            <ChevronDown class="select-chevron" :size="14" :stroke-width="2.5" />
+          </div>
         </label>
+
+        <div class="controls-divider"></div>
 
         <div class="filter-row">
           <button
             v-for="typeOption in filterOptions"
             :key="typeOption.value"
             :class="{ active: activeFilter === typeOption.value }"
+            :aria-pressed="activeFilter === typeOption.value"
             @click="setFilter(typeOption.value)"
           >
+            <span
+              v-if="typeOption.color"
+              class="filter-dot"
+              :style="{ background: typeOption.color }"
+            ></span>
             {{ typeOption.label }}
           </button>
         </div>
@@ -52,11 +69,11 @@
       <div v-if="errorMessage" class="status-message error">{{ errorMessage }}</div>
       <div v-else-if="!isLoading && apiMessage" class="status-message info">{{ apiMessage }}</div>
 
-      <!-- Main layout: list + map -->
+      <!-- Main layout: sidebar (details + list) + map -->
       <div class="content-layout">
-        <!-- Results list -->
+        <!-- Left sidebar — results list with inline details, scrolls independently -->
         <div class="results-section">
-          <!-- Skeleton cards shown while loading (replaces plain text spinner) -->
+          <!-- Skeleton cards shown while loading -->
           <template v-if="isLoading">
             <div v-for="n in 5" :key="'skel-' + n" class="skeleton-card">
               <div class="skeleton-header">
@@ -69,103 +86,108 @@
           </template>
 
           <template v-else>
-            <p
-              v-if="filteredPlaces.length === 0 && !errorMessage && !apiMessage"
-              class="status-message"
+            <!-- Empty state — only shown after a real search attempt -->
+            <div
+              v-if="filteredPlaces.length === 0 && !errorMessage && !apiMessage && hasSearched"
+              class="empty-state"
             >
-              No results match the selected filter.
-            </p>
-            <LocationCard
-              v-for="place in filteredPlaces"
-              :key="place.place_id"
-              :place="place"
-              :is-selected="selectedPlaceId === place.place_id"
-              @select="handleCardSelect(place)"
-            />
+              <div class="empty-state-icon">🌿</div>
+              <p class="empty-state-title">No eco-shops found here</p>
+              <p class="empty-state-hint">
+                Try expanding the search radius or selecting a different filter.
+              </p>
+            </div>
+            <!-- Details panel renders inline, directly below the card that was clicked -->
+            <template v-for="place in filteredPlaces" :key="place.place_id">
+              <LocationCard
+                :place="place"
+                :is-selected="selectedPlaceId === place.place_id"
+                @select="handleCardSelect(place)"
+              />
+              <transition name="slide-up">
+                <div
+                  v-if="selectedDetails && selectedPlaceId === place.place_id"
+                  class="details-panel"
+                >
+                  <button class="details-close" @click="clearSelection" aria-label="Close details">
+                    <X :size="18" :stroke-width="2.5" />
+                  </button>
+
+                  <h3>{{ selectedDetails.name }}</h3>
+                  <span class="details-type-badge" :class="selectedDetails.type">
+                    {{ typeLabel(selectedDetails.type) }}
+                  </span>
+
+                  <div v-if="detailsLoading" class="details-loading">Loading details…</div>
+
+                  <template v-else>
+                    <p v-if="selectedDetails.address">
+                      <strong>Address:</strong> {{ selectedDetails.address }}
+                    </p>
+
+                    <div v-if="selectedDetails.opening_hours?.length" class="details-section">
+                      <strong>Opening Hours:</strong>
+                      <ul class="hours-list">
+                        <li v-for="line in selectedDetails.opening_hours" :key="line">{{ line }}</li>
+                      </ul>
+                    </div>
+
+                    <p v-if="selectedDetails.phone">
+                      <strong>Phone:</strong>
+                      <a :href="`tel:${selectedDetails.phone}`">{{ selectedDetails.phone }}</a>
+                    </p>
+
+                    <p v-if="selectedDetails.website">
+                      <strong>Website:</strong>
+                      <a :href="selectedDetails.website" target="_blank" rel="noopener noreferrer">
+                        {{ selectedDetails.website }}
+                      </a>
+                    </p>
+
+                    <p v-if="detailsError" class="details-error">{{ detailsError }}</p>
+
+                    <div class="travel-mode-row">
+                      <button
+                        v-for="mode in travelModes"
+                        :key="mode.value"
+                        :class="{ active: travelMode === mode.value }"
+                        class="mode-btn"
+                        @click="travelMode = mode.value"
+                      >
+                        <component :is="mode.icon" :size="15" :stroke-width="2" />
+                        {{ mode.label }}
+                      </button>
+                    </div>
+
+                    <button class="directions-btn" @click="getDirections(selectedDetails)">
+                      <Navigation :size="15" :stroke-width="2" />
+                      Get Directions
+                    </button>
+
+                    <div v-if="routeInfo" class="route-info">
+                      <span class="route-stat">
+                        <Route :size="14" :stroke-width="2.2" /> {{ routeInfo.distance }}
+                      </span>
+                      <span class="route-divider">·</span>
+                      <span class="route-stat">
+                        <Clock :size="14" :stroke-width="2.2" /> {{ routeInfo.duration }}
+                      </span>
+                    </div>
+                  </template>
+                </div>
+              </transition>
+            </template>
           </template>
         </div>
 
-        <!-- Google Map + details panel -->
+        <!-- Map — fills all remaining width and height -->
         <div class="map-section">
-          <!-- Map container — filled by Google Maps SDK on mount -->
           <div ref="mapContainer" class="map-container">
-            <!-- Shown only when the SDK fails to load (no key, network error) -->
             <div v-if="mapLoadError" class="map-error">
               <p>🗺️ Map unavailable</p>
               <p class="map-error-detail">{{ mapLoadError }}</p>
             </div>
           </div>
-
-          <!-- Place details panel — appears below the map when a card / marker is selected -->
-          <transition name="slide-up">
-            <div v-if="selectedDetails" class="details-panel">
-              <button class="details-close" @click="clearSelection" aria-label="Close details">✕</button>
-
-              <h3>{{ selectedDetails.name }}</h3>
-              <span class="details-type-badge" :class="selectedDetails.type">
-                {{ typeLabel(selectedDetails.type) }}
-              </span>
-
-              <!-- Loading skeleton while fetching full details from backend -->
-              <div v-if="detailsLoading" class="details-loading">Loading details…</div>
-
-              <template v-else>
-                <p v-if="selectedDetails.address">
-                  <strong>Address:</strong> {{ selectedDetails.address }}
-                </p>
-
-                <div v-if="selectedDetails.opening_hours?.length" class="details-section">
-                  <strong>Opening Hours:</strong>
-                  <ul class="hours-list">
-                    <li v-for="line in selectedDetails.opening_hours" :key="line">{{ line }}</li>
-                  </ul>
-                </div>
-
-                <p v-if="selectedDetails.phone">
-                  <strong>Phone:</strong>
-                  <a :href="`tel:${selectedDetails.phone}`">{{ selectedDetails.phone }}</a>
-                </p>
-
-                <p v-if="selectedDetails.website">
-                  <strong>Website:</strong>
-                  <a :href="selectedDetails.website" target="_blank" rel="noopener noreferrer">
-                    {{ selectedDetails.website }}
-                  </a>
-                </p>
-
-                <p v-if="detailsError" class="details-error">{{ detailsError }}</p>
-
-                <!-- AC 1.2.1 / 1.2.2 — travel mode + inline directions -->
-                <div class="travel-mode-row">
-                  <button
-                    v-for="mode in travelModes"
-                    :key="mode.value"
-                    :class="{ active: travelMode === mode.value }"
-                    class="mode-btn"
-                    @click="travelMode = mode.value"
-                  >
-                    <component :is="mode.icon" :size="15" :stroke-width="2" />
-                    {{ mode.label }}
-                  </button>
-                </div>
-
-                <button class="directions-btn" @click="getDirections(selectedDetails)">
-                  Get Directions
-                </button>
-
-                <!-- Route result: distance + estimated time (AC 1.2.2) -->
-                <div v-if="routeInfo" class="route-info">
-                  <span class="route-stat">
-                    <Route :size="14" :stroke-width="2.2" /> {{ routeInfo.distance }}
-                  </span>
-                  <span class="route-divider">·</span>
-                  <span class="route-stat">
-                    <Clock :size="14" :stroke-width="2.2" /> {{ routeInfo.duration }}
-                  </span>
-                </div>
-              </template>
-            </div>
-          </transition>
         </div>
       </div>
     </div>
@@ -173,10 +195,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import Navbar from '../components/Navbar.vue'
 import LocationCard from '../components/LocationCard.vue'
-import { Car, PersonStanding, Bus, Route, Clock } from 'lucide-vue-next'
+import { Car, PersonStanding, Bus, Route, Clock, Search, X, Navigation, ChevronDown } from 'lucide-vue-next'
 import {
   getUserCoordinates,
   fetchNearbyPlaces,
@@ -190,7 +212,8 @@ import {
 const mapContainer = ref(null)
 const mapLoadError = ref('')
 
-const isLoading = ref(false)
+const isLoading = ref(true)   // true from the start so skeleton shows immediately
+const hasSearched = ref(false) // flips to true after the first loadPlaces() completes
 const errorMessage = ref('')
 const apiMessage = ref('')
 const isFallbackLocation = ref(false)
@@ -229,10 +252,10 @@ const markerMap = {}   // place_id → google.maps.Marker
 // ---------------------------------------------------------------------------
 
 const filterOptions = [
-  { label: 'All',         value: 'all' },
-  { label: 'Second-hand', value: 'second_hand_shop' },
-  { label: 'Donation',    value: 'donation_point' },
-  { label: 'Recycling',   value: 'recycling' },
+  { label: 'All',         value: 'all',             color: null },
+  { label: 'Second-hand', value: 'second_hand_shop', color: '#16a34a' },
+  { label: 'Donation',    value: 'donation_point',   color: '#2563eb' },
+  { label: 'Recycling',   value: 'recycling',        color: '#d97706' },
 ]
 
 const travelModes = [
@@ -477,6 +500,7 @@ async function loadPlaces() {
     errorMessage.value = err.message || 'Failed to load eco-shops. Please try again.'
   } finally {
     isLoading.value = false
+    hasSearched.value = true
   }
 }
 
@@ -509,6 +533,10 @@ async function handleCardSelect(place) {
     detailsError.value = 'Could not load details. Please try again.'
   } finally {
     detailsLoading.value = false
+    // Scroll the details panel into view — block:'nearest' means minimum scroll only
+    await nextTick()
+    const panel = document.querySelector('.details-panel')
+    if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }
 }
 
@@ -607,37 +635,56 @@ onMounted(async () => {
 <style scoped>
 .eco-page {
   background: #f8faf8;
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .page-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 1360px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 16px 24px 0;
+  box-sizing: border-box;
 }
 
-/* Hero */
+/* Hero — compact to give more height to the map */
 .eco-hero {
   background: #edf5ef;
-  border-radius: 24px;
-  padding: 40px;
-  margin-bottom: 24px;
+  border-radius: 20px;
+  padding: 20px 40px;
+  margin-bottom: 12px;
   text-align: center;
+  flex-shrink: 0;
+}
+
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  color: #16a34a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
 }
 
 .eco-hero h1 {
-  font-size: 48px;
+  font-size: 28px;
+  font-weight: 800;
   color: #0f172a;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
-.eco-hero p {
-  font-size: 18px;
+.hero-subtitle {
+  font-size: 15px;
   color: #475569;
-  line-height: 1.6;
-  max-width: 760px;
-  margin: 0 auto 8px;
+  line-height: 1.5;
+  max-width: 560px;
+  margin: 0 auto 14px;
 }
 
 .fallback-notice {
@@ -691,26 +738,50 @@ onMounted(async () => {
 
 /* Address search bar (AC 1.1.1) */
 .address-search-row {
-  margin-top: 18px;
+  margin-top: 4px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.address-input-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+}
+
+.address-search-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
 }
 
 .address-input {
   width: 100%;
-  max-width: 520px;
-  padding: 12px 18px;
+  height: 52px;
+  padding: 0 18px 0 44px;
   border: 2px solid #d1d5db;
   border-radius: 999px;
   font-size: 15px;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
   background: white;
+  box-sizing: border-box;
 }
 
 .address-input:focus {
   border-color: #16a34a;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.12);
+}
+
+.address-hint {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
 }
 
 /* Travel mode buttons */
@@ -735,7 +806,7 @@ onMounted(async () => {
 
 .mode-btn.active {
   background: #f0fdf4;
-  border-color: #16a34a;
+  border: 2px solid #16a34a;
   color: #166534;
 }
 
@@ -770,42 +841,76 @@ onMounted(async () => {
 .controls-row {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 0;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 12px 20px;
+  flex-shrink: 0;
 }
 
 .radius-label {
   font-weight: 600;
+  font-size: 14px;
   color: #334155;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
+.select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
 .radius-select {
-  padding: 8px 12px;
+  padding: 8px 32px 8px 12px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background: white;
+  padding-right: 28px;
+}
+
+.select-chevron {
+  position: absolute;
+  right: 8px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.controls-divider {
+  width: 1px;
+  height: 28px;
+  background: #e5e7eb;
+  margin: 0 20px;
+  flex-shrink: 0;
 }
 
 .filter-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .filter-row button {
-  padding: 9px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
   border: 1px solid #d1d5db;
   background: white;
   border-radius: 999px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 14px;
-  transition: background 0.15s, color 0.15s;
+  font-size: 13px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .filter-row button.active {
@@ -814,7 +919,14 @@ onMounted(async () => {
   border-color: #16a34a;
 }
 
-/* Status messages */
+.filter-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Status messages (error / info banners above the layout) */
 .status-message {
   margin-bottom: 20px;
   font-weight: 600;
@@ -824,33 +936,76 @@ onMounted(async () => {
 .status-message.error { color: #b91c1c; }
 .status-message.info  { color: #92400e; }
 
-/* Main layout */
+/* Empty state card — shown in the list column when search returns no results */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  background: white;
+  border: 2px dashed #d1fae5;
+  border-radius: 20px;
+  gap: 8px;
+}
+
+.empty-state-icon {
+  font-size: 40px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.empty-state-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.empty-state-hint {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+  max-width: 260px;
+}
+
+/* Main layout — fills all remaining viewport height */
 .content-layout {
+  flex: 1;
+  min-height: 0; /* crucial: lets flex children shrink below content size */
   display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: 24px;
-  align-items: start;
+  grid-template-columns: 380px 1fr;
+  gap: 16px;
+  padding-bottom: 16px;
 }
 
+/* Left sidebar — scrolls independently, map stays fixed */
 .results-section {
-  display: grid;
-  gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+  padding-right: 2px;
 }
 
-/* Map area */
+/* Map column — static, fills full height */
 .map-section {
-  position: sticky;
-  top: 24px;
+  min-height: 0;
 }
 
 .map-container {
   width: 100%;
-  height: 500px;
+  height: 100%; /* fills the full column height */
   border-radius: 20px;
   border: 1px solid #e2e8f0;
   overflow: hidden;
   background: #e2e8f0;
-  /* Flex layout so the error message centres inside the container */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -872,30 +1027,38 @@ onMounted(async () => {
   color: #94a3b8 !important;
 }
 
-/* Details panel */
+/* Details panel — now sits at the top of the sidebar (gap handles spacing) */
 .details-panel {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 20px;
   padding: 24px;
-  margin-top: 16px;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
   position: relative;
+  flex-shrink: 0;
 }
 
 .details-close {
   position: absolute;
   top: 14px;
   right: 14px;
-  background: none;
+  background: #f1f5f9;
   border: none;
-  font-size: 18px;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   color: #64748b;
-  line-height: 1;
+  transition: background 150ms ease, color 150ms ease;
 }
 
-.details-close:hover { color: #0f172a; }
+.details-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
 
 .details-panel h3 {
   font-size: 20px;
@@ -965,6 +1128,10 @@ onMounted(async () => {
   font-weight: 600;
   cursor: pointer;
   font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   transition: background 0.15s;
 }
 
@@ -982,20 +1149,53 @@ onMounted(async () => {
   transform: translateY(10px);
 }
 
-/* Responsive */
+/* Responsive — restore normal page flow on mobile */
 @media (max-width: 900px) {
+  .eco-page {
+    height: auto;
+    overflow: visible;
+  }
+
+  .page-container {
+    overflow: visible;
+    padding: 12px 16px;
+  }
+
   .content-layout {
     grid-template-columns: 1fr;
+    flex: none;
+    padding-bottom: 24px;
+  }
+
+  .results-section {
+    overflow: visible;
+    max-height: none;
   }
 
   .map-section {
-    position: static;
-    /* On mobile, show map above the list */
-    order: -1;
+    order: -1; /* map above list on mobile */
+  }
+
+  .map-container {
+    height: 320px; /* fixed height on mobile */
+  }
+
+  .eco-hero {
+    padding: 20px 16px;
   }
 
   .eco-hero h1 {
-    font-size: 34px;
+    font-size: 24px;
+  }
+
+  .controls-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .controls-divider {
+    display: none;
   }
 }
 </style>
