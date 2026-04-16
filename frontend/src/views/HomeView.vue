@@ -117,10 +117,12 @@ import { ArrowRight } from 'lucide-vue-next'
 
 const pageRef = ref(null)
 let currentIndex = 0
-let isAnimating = false  // used only for keyboard lock
+let isAnimating = false   // used only for keyboard lock
 let rafId = null
-let lastWheelTime = 0
-const WHEEL_THROTTLE = 120 // ms — filters duplicate events from the same scroll notch
+let scrollLocked = false  // true during animation + cooldown — blocks trackpad momentum events
+let accumulatedDelta = 0  // accumulates trackpad micro-deltas until scroll intent is clear
+const LOCK_DURATION = 700 // ms — must be >= animation duration (600ms) + safety buffer
+const DELTA_THRESHOLD = 30 // px — minimum accumulated deltaY to trigger a section change
 let observer = null
 
 const impactStats = [
@@ -227,14 +229,27 @@ function scrollToSection(index) {
   rafId = requestAnimationFrame(step)
 }
 
-// Throttle filters rapid-fire events from the same scroll notch (typically
-// 3–5 events within ~30ms on Windows). Each distinct notch advances one section.
+// Mac trackpads fire hundreds of small deltaY events per swipe (plus momentum).
+// A simple time throttle lets too many through — the page races to the bottom.
+// Fix: accumulate delta until intent is clear, then lock for the full animation
+// duration so momentum events after the trigger are ignored.
 function onWheel(e) {
   e.preventDefault()
-  const now = Date.now()
-  if (now - lastWheelTime < WHEEL_THROTTLE) return
-  lastWheelTime = now
-  scrollToSection(currentIndex + (e.deltaY > 0 ? 1 : -1))
+  if (scrollLocked) return
+
+  accumulatedDelta += e.deltaY
+  if (Math.abs(accumulatedDelta) < DELTA_THRESHOLD) return
+
+  const direction = accumulatedDelta > 0 ? 1 : -1
+  accumulatedDelta = 0
+  scrollLocked = true
+
+  scrollToSection(currentIndex + direction)
+
+  setTimeout(() => {
+    accumulatedDelta = 0  // discard any momentum that built up during the lock
+    scrollLocked = false
+  }, LOCK_DURATION)
 }
 
 function onKeyDown(e) {
