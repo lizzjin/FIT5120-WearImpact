@@ -626,6 +626,7 @@ async function openModal(item) {
 
 function closeModal() {
   showModal.value = false
+  selectedCompany.value = null
 }
 
 // ── Detail computed values (for modal) ───────────────────────────────────────
