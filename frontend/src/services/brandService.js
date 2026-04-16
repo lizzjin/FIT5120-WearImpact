@@ -9,6 +9,26 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 /**
+ * Fetch a paginated list of all companies ordered by ethical score.
+ *
+ * @param {number} page - 1-based page number
+ * @param {number} pageSize - Results per page
+ * @returns {Promise<{results: Array, total: number, page: number, page_size: number}>}
+ * @throws {Error} On network failure or non-2xx response
+ */
+export async function fetchAllCompanies(page = 1, pageSize = 9) {
+  const params = new URLSearchParams({ page, page_size: pageSize })
+  const response = await fetch(`${API_BASE}/api/brands?${params}`)
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}))
+    throw new Error(errorBody?.detail || `Fetch failed (HTTP ${response.status})`)
+  }
+
+  return response.json()
+}
+
+/**
  * Search brands and companies by name with fuzzy matching.
  *
  * @param {string} query - Search string (min 1 char)
