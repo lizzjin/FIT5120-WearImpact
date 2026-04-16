@@ -35,6 +35,15 @@ class BrandSearchResponse(BaseModel):
     message: str | None = None
 
 
+class CompanyListResponse(BaseModel):
+    """Paginated list of all companies, used by GET /api/brands."""
+
+    results: list[BrandSearchResult]
+    total: int
+    page: int
+    page_size: int
+
+
 class CompanyDetailResponse(BaseModel):
     """Full company detail including all sustainability dimension scores."""
 

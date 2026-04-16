@@ -14,12 +14,41 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.schemas.brand import BrandSearchResponse, BrandSearchResult, CompanyDetailResponse
-from app.services.brand_service import get_company_detail, search_brands
+from app.schemas.brand import BrandSearchResponse, BrandSearchResult, CompanyDetailResponse, CompanyListResponse
+from app.services.brand_service import get_company_detail, list_companies, search_brands
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/brands", tags=["brands"])
+
+
+# List all companies with server-side pagination.
+@router.get("", response_model=CompanyListResponse)
+async def list_companies_endpoint(
+    page: int = Query(1, ge=1, description="Page number (1-based)"),
+    page_size: int = Query(9, ge=1, le=50, description="Results per page"),
+    db: AsyncSession = Depends(get_db),
+) -> CompanyListResponse:
+    """Return a paginated list of all companies ordered by ethical score.
+
+    Args:
+        page: 1-based page number.
+        page_size: Number of results per page (max 50).
+        db: Injected async database session.
+
+    Returns:
+        CompanyListResponse with results, total count, page, and page_size.
+
+    Raises:
+        HTTPException 503: If the database is unreachable.
+    """
+    try:
+        results, total = await list_companies(db, page, page_size)
+    except Exception as exc:
+        logger.error("List companies failed for page=%d: %s", page, exc)
+        raise HTTPException(status_code=503, detail="Database unavailable") from exc
+
+    return CompanyListResponse(results=[BrandSearchResult(**r) for r in results], total=total, page=page, page_size=page_size)
 
 
 # Epic 4 Step 1:

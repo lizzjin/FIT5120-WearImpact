@@ -96,6 +96,45 @@ async def search_brands(db: AsyncSession, query: str) -> list[dict]:
     ]
 
 
+async def list_companies(db: AsyncSession, page: int, page_size: int) -> tuple[list[dict], int]:
+    """Return a paginated list of all companies ordered by overall_score descending.
+
+    Args:
+        db: Async database session.
+        page: 1-based page number.
+        page_size: Number of results per page.
+
+    Returns:
+        Tuple of (list of company dicts matching BrandSearchResult schema, total count).
+    """
+    offset = (page - 1) * page_size
+
+    count_sql = text("SELECT COUNT(*) FROM companies")
+    total: int = (await db.execute(count_sql)).scalar() or 0
+
+    sql = text("""
+        SELECT id AS company_id, name AS company_name, overall_score, product_category
+        FROM companies
+        ORDER BY overall_score DESC
+        LIMIT :limit OFFSET :offset
+    """)
+    result = await db.execute(sql, {"limit": page_size, "offset": offset})
+    rows = result.mappings().all()
+
+    return [
+        {
+            "company_id": row["company_id"],
+            "company_name": row["company_name"],
+            "matched_brand": None,
+            "overall_score": row["overall_score"],
+            "score_label": get_score_label(row["overall_score"]),
+            "product_category": row["product_category"],
+            "logo_url": None,
+        }
+        for row in rows
+    ], total
+
+
 async def get_company_detail(db: AsyncSession, company_id: int) -> dict | None:
     """Retrieve full company sustainability data including all dimension scores.
 
