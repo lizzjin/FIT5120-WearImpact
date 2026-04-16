@@ -985,6 +985,9 @@ async function recenterToUser() {
     isFallbackLocation.value = false;
     syncUserMarkerPosition();
 
+    if (addressSearchInput.value) addressSearchInput.value.value = '';
+    clearAddressSuggestions();
+
     mapInstance.flyTo({
       center: [coords.lng, coords.lat],
       zoom: 14.2,
