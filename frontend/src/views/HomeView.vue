@@ -6,16 +6,39 @@
     <section class="snap-section s-hero">
       <div class="s-hero-left section-animate">
         <p class="eyebrow">FOR SUSTAINABLE FASHION IN AUSTRALIA</p>
-        <h1>Look good.<br />Feel good.<br />Choose better.</h1>
-        <p class="hero-sub">
+        <h1
+          v-motion
+          :initial="{ opacity: 0, y: 40 }"
+          :visible-once="{ opacity: 1, y: 0, transition: { duration: 700, delay: 100 } }"
+        >
+          Look good.<br />Feel good.<br />Choose better.
+        </h1>
+        <p
+          class="hero-sub"
+          v-motion
+          :initial="{ opacity: 0, y: 24 }"
+          :visible-once="{ opacity: 1, y: 0, transition: { duration: 600, delay: 300 } }"
+        >
           Fast fashion gives instant joy.<br />
           But its impact lasts far longer than trends.
         </p>
-        <p class="hero-stat">
+        <p
+          class="hero-stat"
+          v-motion
+          :initial="{ opacity: 0, x: -20 }"
+          :visible-once="{ opacity: 1, x: 0, transition: { duration: 600, delay: 500 } }"
+        >
           Every year, Australians throw away <strong>220,000 tonnes</strong> of clothing.
           Most of it was bought with good intentions.
         </p>
-        <span class="scroll-hint">Scroll to explore <span class="bounce">↓</span></span>
+        <span
+          class="scroll-hint"
+          v-motion
+          :initial="{ opacity: 0 }"
+          :visible-once="{ opacity: 1, transition: { duration: 500, delay: 800 } }"
+        >
+          Scroll to explore <span class="bounce">&#8595;</span>
+        </span>
       </div>
       <div class="s-hero-right">
         <img
@@ -25,7 +48,7 @@
       </div>
     </section>
 
-    <!-- §2 Sound Familiar? — full-bleed dark overlay (editorial standard for emotional copy) -->
+    <!-- §2 Sound Familiar? — full-bleed dark overlay -->
     <section class="snap-section s-familiar">
       <img
         class="bg-img"
@@ -36,12 +59,23 @@
       <div class="s-familiar-content section-animate">
         <h2>Sound familiar?</h2>
         <div class="questions">
-          <p>"Bought something because it was on sale?"</p>
-          <p>"Worn an outfit once, then forgot about it?"</p>
-          <p>"Have clothes in your wardrobe you never touch?"</p>
+          <p
+            v-for="(q, i) in familiarQuestions"
+            :key="i"
+            v-motion
+            :initial="{ opacity: 0, y: 20 }"
+            :visible-once="{ opacity: 1, y: 0, transition: { duration: 500, delay: 200 + i * 180 } }"
+          >
+            {{ q }}
+          </p>
         </div>
-        <p class="familiar-stat">
-          You're not alone —
+        <p
+          class="familiar-stat"
+          v-motion
+          :initial="{ opacity: 0, y: 16 }"
+          :visible-once="{ opacity: 1, y: 0, transition: { duration: 600, delay: 800 } }"
+        >
+          You're not alone &mdash;
           <strong>84% of Australians</strong> own clothes they haven't worn in over a year.
         </p>
       </div>
@@ -58,7 +92,14 @@
       <div class="s-cost-content section-animate">
         <p class="eyebrow light">THE HIDDEN COST OF EVERY TREND</p>
         <div class="stat-row">
-          <div v-for="stat in impactStats" :key="stat.number" class="stat-card">
+          <div
+            v-for="(stat, i) in impactStats"
+            :key="stat.number"
+            class="stat-card"
+            v-motion
+            :initial="{ opacity: 0, y: 30, scale: 0.95 }"
+            :visible-once="{ opacity: 1, y: 0, scale: 1, transition: { duration: 500, delay: 150 + i * 180 } }"
+          >
             <p class="stat-num">{{ stat.number }}</p>
             <p class="stat-lbl">{{ stat.label }}</p>
           </div>
@@ -69,10 +110,37 @@
     <!-- §4 Bridge — transition from problem to solution -->
     <section class="snap-section s-bridge">
       <div class="s-bridge-left section-animate">
-        <h2>Sustainable choices<br />shouldn't feel hard.</h2>
-        <p class="bridge-sub">You don't need to stop loving fashion.</p>
-        <p class="bridge-em">You just need better information.</p>
-        <p class="bridge-hint">Here's how WearImpact helps ↓</p>
+        <h2
+          v-motion
+          :initial="{ opacity: 0, y: 30 }"
+          :visible-once="{ opacity: 1, y: 0, transition: { duration: 600, delay: 100 } }"
+        >
+          Sustainable choices<br />shouldn't feel hard.
+        </h2>
+        <p
+          class="bridge-sub"
+          v-motion
+          :initial="{ opacity: 0, y: 20 }"
+          :visible-once="{ opacity: 1, y: 0, transition: { duration: 500, delay: 300 } }"
+        >
+          You don't need to stop loving fashion.
+        </p>
+        <p
+          class="bridge-em"
+          v-motion
+          :initial="{ opacity: 0, y: 20 }"
+          :visible-once="{ opacity: 1, y: 0, transition: { duration: 500, delay: 450 } }"
+        >
+          You just need better information.
+        </p>
+        <p
+          class="bridge-hint"
+          v-motion
+          :initial="{ opacity: 0 }"
+          :visible-once="{ opacity: 1, transition: { duration: 500, delay: 650 } }"
+        >
+          Here's how WearImpact helps &#8595;
+        </p>
       </div>
       <div class="s-bridge-right">
         <img
@@ -82,7 +150,7 @@
       </div>
     </section>
 
-    <!-- §5–7 Solution sections — each is a problem + solution + CTA link -->
+    <!-- §5–7 Solution sections -->
     <section
       v-for="(sol, i) in solutions"
       :key="sol.id"
@@ -90,11 +158,38 @@
       :class="{ reverse: i % 2 === 1 }"
     >
       <div class="sol-text section-animate">
-        <p class="sol-problem">{{ sol.problem }}</p>
-        <h2>{{ sol.title }}</h2>
-        <p class="sol-desc">{{ sol.description }}</p>
-        <router-link :to="sol.link" class="sol-cta">
-          {{ sol.cta }} <ArrowRight :size="17" :stroke-width="2.5" class="cta-arrow" />
+        <p
+          class="sol-problem"
+          v-motion
+          :initial="{ opacity: 0, y: 16 }"
+          :visible-once="{ opacity: 1, y: 0, transition: { duration: 500, delay: 100 } }"
+        >
+          {{ sol.problem }}
+        </p>
+        <h2
+          v-motion
+          :initial="{ opacity: 0, y: 24 }"
+          :visible-once="{ opacity: 1, y: 0, transition: { duration: 600, delay: 250 } }"
+        >
+          {{ sol.title }}
+        </h2>
+        <p
+          class="sol-desc"
+          v-motion
+          :initial="{ opacity: 0, y: 18 }"
+          :visible-once="{ opacity: 1, y: 0, transition: { duration: 500, delay: 400 } }"
+        >
+          {{ sol.description }}
+        </p>
+        <router-link
+          :to="sol.link"
+          class="sol-cta"
+          v-motion
+          :initial="{ opacity: 0, y: 12 }"
+          :visible-once="{ opacity: 1, y: 0, transition: { duration: 500, delay: 550 } }"
+        >
+          {{ sol.cta }}
+          <ArrowRight :size="17" :stroke-width="2.5" class="cta-arrow" />
         </router-link>
       </div>
       <div class="sol-image">
@@ -102,7 +197,7 @@
       </div>
     </section>
 
-    <!-- Footer gets its own snap point so it's always reachable -->
+    <!-- Footer -->
     <div class="footer-snap">
       <FooterSection />
     </div>
@@ -117,13 +212,19 @@ import { ArrowRight } from 'lucide-vue-next'
 
 const pageRef = ref(null)
 let currentIndex = 0
-let isAnimating = false   // used only for keyboard lock
+let isAnimating = false
 let rafId = null
-let scrollLocked = false  // true during animation + cooldown — blocks trackpad momentum events
-let accumulatedDelta = 0  // accumulates trackpad micro-deltas until scroll intent is clear
-const LOCK_DURATION = 700 // ms — must be >= animation duration (600ms) + safety buffer
-const DELTA_THRESHOLD = 30 // px — minimum accumulated deltaY to trigger a section change
+let scrollLocked = false
+let accumulatedDelta = 0
+const LOCK_DURATION = 700
+const DELTA_THRESHOLD = 30
 let observer = null
+
+const familiarQuestions = [
+  '"Bought something because it was on sale?"',
+  '"Worn an outfit once, then forgot about it?"',
+  '"Have clothes in your wardrobe you never touch?"',
+]
 
 const impactStats = [
   {
@@ -132,7 +233,7 @@ const impactStats = [
   },
   {
     number: '14.5M t',
-    label: 'of CO₂ from fashion-related carbon emissions'
+    label: 'of CO\u2082 from fashion-related carbon emissions'
   },
   {
     number: '1.8B t',
@@ -182,22 +283,15 @@ function getSections() {
   return [...page.querySelectorAll('.snap-section, .footer-snap')]
 }
 
-// Ease-in-out cubic — smooth deceleration at both ends
 function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
 
-// RAF-based scrollTop animation — no browser scroll engine involved.
-// If called while an animation is running, it immediately snaps to that
-// animation's target and starts the new one — zero wait, instant response.
 function scrollToSection(index) {
   const page = pageRef.value
   const sections = getSections()
   if (index < 0 || index >= sections.length || !page) return
 
-  // Cancel any running animation — keep scrollTop exactly where it is
-  // so the new animation continues from the current mid-scroll position
-  // without any visual jump or flash.
   if (rafId) {
     cancelAnimationFrame(rafId)
     rafId = null
@@ -206,10 +300,10 @@ function scrollToSection(index) {
   currentIndex = index
   isAnimating = true
 
-  const startTop = page.scrollTop // current position, may be mid-animation
+  const startTop = page.scrollTop
   const targetTop = sections[index].offsetTop
   const distance = targetTop - startTop
-  const duration = 600 // shorter = snappier response
+  const duration = 600
   const startTime = performance.now()
 
   function step(now) {
@@ -229,10 +323,6 @@ function scrollToSection(index) {
   rafId = requestAnimationFrame(step)
 }
 
-// Mac trackpads fire hundreds of small deltaY events per swipe (plus momentum).
-// A simple time throttle lets too many through — the page races to the bottom.
-// Fix: accumulate delta until intent is clear, then lock for the full animation
-// duration so momentum events after the trigger are ignored.
 function onWheel(e) {
   e.preventDefault()
   if (scrollLocked) return
@@ -247,7 +337,7 @@ function onWheel(e) {
   scrollToSection(currentIndex + direction)
 
   setTimeout(() => {
-    accumulatedDelta = 0  // discard any momentum that built up during the lock
+    accumulatedDelta = 0
     scrollLocked = false
   }, LOCK_DURATION)
 }
@@ -300,20 +390,15 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* ── Scroll container — RAF-driven section transitions ── */
+/* ── Scroll container ── */
 .home-page {
   height: 100vh;
   overflow-y: scroll;
-  scroll-behavior: auto; /* Must be auto — native smooth scroll would fight the RAF loop */
+  scroll-behavior: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
 }
 
-.footer-snap {
-  /* No scroll-snap-align needed — JS scrollToSection handles navigation */
-}
-
-/* Remove navbar's default bottom margin inside this container */
 .home-page :deep(.navbar) {
   margin-bottom: 0;
 }
@@ -326,7 +411,6 @@ onUnmounted(() => {
   display: flex;
 }
 
-/* Full-bleed background image helper */
 .bg-img {
   position: absolute;
   inset: 0;
@@ -367,7 +451,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #16a34a;
+  color: var(--color-primary);
   margin-bottom: 20px;
 }
 
@@ -380,7 +464,7 @@ onUnmounted(() => {
    §1  Hero
 ───────────────────────────────────────── */
 .s-hero {
-  background: #f6f0e6;
+  background: var(--color-warm-cream);
   flex-direction: row;
 }
 
@@ -398,35 +482,35 @@ onUnmounted(() => {
   font-size: 62px;
   font-weight: 800;
   line-height: 1.02;
-  color: #0f172a;
+  color: var(--color-text);
   margin-bottom: 24px;
 }
 
 .hero-sub {
   font-size: 18px;
-  color: #4b5563;
+  color: var(--color-text-muted);
   line-height: 1.7;
   margin-bottom: 20px;
 }
 
 .hero-stat {
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-subtle);
   line-height: 1.65;
-  border-left: 3px solid #16a34a;
+  border-left: 3px solid var(--color-primary);
   padding-left: 16px;
   margin-bottom: 36px;
   max-width: 420px;
 }
 
 .hero-stat strong {
-  color: #0f172a;
+  color: var(--color-text);
   font-weight: 700;
 }
 
 .scroll-hint {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--color-text-faint);
   letter-spacing: 0.04em;
   display: flex;
   align-items: center;
@@ -446,6 +530,7 @@ onUnmounted(() => {
 .s-hero-right {
   flex: 1;
   position: relative;
+  overflow: hidden;
 }
 
 .s-hero-right img {
@@ -455,10 +540,15 @@ onUnmounted(() => {
   height: 100%;
   object-fit: cover;
   object-position: center 30%;
+  transition: transform 8s ease;
+}
+
+.s-hero-right:hover img {
+  transform: scale(1.03);
 }
 
 /* ─────────────────────────────────────────
-   §2  Sound Familiar? — dark overlay
+   §2  Sound Familiar?
 ───────────────────────────────────────── */
 .s-familiar {
   align-items: center;
@@ -529,17 +619,18 @@ onUnmounted(() => {
 
 .stat-card {
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   padding: 40px 32px;
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  transition: border-color 200ms ease, background 200ms ease;
+  transition: border-color 300ms ease, background 300ms ease, transform 300ms ease;
 }
 
 .stat-card:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-4px);
 }
 
 .stat-num {
@@ -561,7 +652,7 @@ onUnmounted(() => {
    §4  Bridge
 ───────────────────────────────────────── */
 .s-bridge {
-  background: #faf7f2;
+  background: var(--color-warm-alt);
   flex-direction: row;
 }
 
@@ -577,13 +668,13 @@ onUnmounted(() => {
   font-size: 52px;
   font-weight: 800;
   line-height: 1.08;
-  color: #0f172a;
+  color: var(--color-text);
   margin-bottom: 28px;
 }
 
 .bridge-sub {
   font-size: 19px;
-  color: #475569;
+  color: var(--color-text-muted);
   line-height: 1.65;
   margin-bottom: 6px;
 }
@@ -591,7 +682,7 @@ onUnmounted(() => {
 .bridge-em {
   font-size: 19px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-text);
   line-height: 1.65;
   margin-bottom: 36px;
 }
@@ -599,13 +690,14 @@ onUnmounted(() => {
 .bridge-hint {
   font-size: 15px;
   font-weight: 600;
-  color: #16a34a;
+  color: var(--color-primary);
   letter-spacing: 0.01em;
 }
 
 .s-bridge-right {
   flex: 1;
   position: relative;
+  overflow: hidden;
 }
 
 .s-bridge-right img {
@@ -615,6 +707,11 @@ onUnmounted(() => {
   height: 100%;
   object-fit: cover;
   object-position: center 20%;
+  transition: transform 8s ease;
+}
+
+.s-bridge-right:hover img {
+  transform: scale(1.03);
 }
 
 /* ─────────────────────────────────────────
@@ -627,7 +724,7 @@ onUnmounted(() => {
 
 .s-solution.reverse {
   flex-direction: row-reverse;
-  background: #f0fdf4;
+  background: var(--color-primary-lighter);
 }
 
 .sol-text {
@@ -643,7 +740,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #94a3b8;
+  color: var(--color-text-faint);
   margin-bottom: 16px;
 }
 
@@ -651,13 +748,13 @@ onUnmounted(() => {
   font-size: 46px;
   font-weight: 800;
   line-height: 1.1;
-  color: #0f172a;
+  color: var(--color-text);
   margin-bottom: 20px;
 }
 
 .sol-desc {
   font-size: 17px;
-  color: #475569;
+  color: var(--color-text-muted);
   line-height: 1.75;
   margin-bottom: 36px;
   max-width: 460px;
@@ -668,21 +765,21 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   padding: 14px 28px;
-  border-radius: 12px;
-  background: #16a34a;
+  border-radius: var(--radius-btn);
+  background: var(--color-primary);
   color: white;
   font-weight: 700;
   font-size: 15px;
   text-decoration: none;
   align-self: flex-start;
   transition:
-    background 150ms ease,
-    transform 150ms ease,
-    box-shadow 150ms ease;
+    background var(--transition-base),
+    transform var(--transition-base),
+    box-shadow var(--transition-base);
 }
 
 .sol-cta:hover {
-  background: #15803d;
+  background: var(--color-primary-dark);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(22, 163, 74, 0.3);
 }
@@ -698,6 +795,7 @@ onUnmounted(() => {
 .sol-image {
   flex: 1;
   position: relative;
+  overflow: hidden;
 }
 
 .sol-image img {
@@ -706,6 +804,11 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 6s ease;
+}
+
+.s-solution:hover .sol-image img {
+  transform: scale(1.04);
 }
 
 /* ─────────────────────────────────────────

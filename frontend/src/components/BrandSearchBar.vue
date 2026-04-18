@@ -11,11 +11,13 @@
       @input="onInput"
       @keyup.enter="onEnter"
     />
-    <button v-if="inputValue" class="clear-btn" @click="clear" aria-label="Clear search">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M18 6 6 18M6 6l12 12"/>
-      </svg>
-    </button>
+    <Transition name="clear-fade">
+      <button v-if="inputValue" class="clear-btn" @click="clear" aria-label="Clear search">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </Transition>
   </div>
 </template>
 
@@ -58,7 +60,7 @@ function clear() {
 .search-icon {
   position: absolute;
   left: 16px;
-  color: #94a3b8;
+  color: var(--color-text-faint);
   pointer-events: none;
 }
 
@@ -73,14 +75,14 @@ function clear() {
 }
 
 .search-box input:focus {
-  border-color: #16a34a;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
 }
 
 .clear-btn {
   position: absolute;
   right: 14px;
-  background: #f1f5f9;
+  background: var(--color-surface-alt);
   border: none;
   border-radius: 6px;
   width: 26px;
@@ -88,14 +90,20 @@ function clear() {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
+  color: var(--color-text-faint);
   cursor: pointer;
   padding: 0;
-  transition: background 150ms ease, color 150ms ease;
+  transition: background var(--transition-base), color var(--transition-base);
 }
 
 .clear-btn:hover {
   background: #e2e8f0;
-  color: #475569;
+  color: var(--color-text-muted);
 }
+
+/* Clear button fade transition */
+.clear-fade-enter-active { transition: opacity 150ms ease, transform 150ms ease; }
+.clear-fade-leave-active { transition: opacity 100ms ease, transform 100ms ease; }
+.clear-fade-enter-from { opacity: 0; transform: scale(0.8); }
+.clear-fade-leave-to { opacity: 0; transform: scale(0.8); }
 </style>

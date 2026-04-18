@@ -37,11 +37,11 @@ const props = defineProps({
 })
 
 const fillColor = computed(() => {
-  if (props.value >= 75) return '#16a34a'
-  if (props.value >= 50) return '#65a30d'
-  if (props.value >= 30) return '#ca8a04'
-  if (props.value >= 10) return '#ea580c'
-  return '#dc2626'
+  if (props.value >= 75) return 'var(--color-score-great)'
+  if (props.value >= 50) return 'var(--color-score-good)'
+  if (props.value >= 30) return 'var(--color-score-start)'
+  if (props.value >= 10) return 'var(--color-score-below)'
+  return 'var(--color-score-avoid)'
 })
 </script>
 
@@ -57,10 +57,8 @@ const fillColor = computed(() => {
 }
 
 .metric-labels { display: flex; flex-direction: column; gap: 2px; flex: 1; }
-
 .metric-label { font-size: 14px; font-weight: 600; color: #1e293b; }
-
-.metric-sublabel { font-size: 12px; color: #64748b; line-height: 1.4; }
+.metric-sublabel { font-size: 12px; color: var(--color-text-subtle); line-height: 1.4; }
 
 .metric-pct {
   font-size: 15px;
@@ -74,21 +72,21 @@ const fillColor = computed(() => {
 .metric-raw {
   font-size: 12px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--color-text-subtle);
 }
 
 .track {
   width: 100%;
   height: 8px;
-  background: #dcfce7;
-  border-radius: 999px;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-pill);
   overflow: hidden;
 }
 
 .fill {
   height: 100%;
-  border-radius: 999px;
-  transition: width 0.5s ease;
+  border-radius: var(--radius-pill);
+  transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
