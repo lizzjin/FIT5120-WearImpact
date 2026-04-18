@@ -45,33 +45,36 @@ const typeLabel = computed(() => TYPE_LABELS[props.place.type] || props.place.ty
 
 <style scoped>
 .location-card {
-  background: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 20px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-card);
   padding: 22px 24px;
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 150ms ease,
+    background 200ms ease;
 }
 
 .location-card:hover {
-  border-color: #16a34a;
+  border-color: var(--color-primary);
   box-shadow: 0 6px 20px rgba(22, 163, 74, 0.12);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .location-card.selected {
-  border-color: #16a34a;
-  border-left: 4px solid #16a34a;
-  background: #f0fdf4;
+  border-color: var(--color-primary);
+  border-left: 4px solid var(--color-primary);
+  background: var(--color-primary-lighter);
 }
 
 .location-card:focus-visible {
-  outline: 2px solid #16a34a;
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-/* Header row */
 .card-header {
   display: flex;
   align-items: flex-start;
@@ -82,16 +85,15 @@ const typeLabel = computed(() => TYPE_LABELS[props.place.type] || props.place.ty
 
 .location-card h3 {
   font-size: 18px;
-  color: #0f172a;
+  color: var(--color-text);
   margin: 0;
   line-height: 1.4;
 }
 
-/* Type badge */
 .type-badge {
   flex-shrink: 0;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
@@ -101,10 +103,9 @@ const typeLabel = computed(() => TYPE_LABELS[props.place.type] || props.place.ty
 .type-badge.donation_point   { background: #dbeafe; color: #1e40af; }
 .type-badge.recycling         { background: #fef3c7; color: #92400e; }
 
-/* Distance */
 .distance {
   margin: 0 0 8px;
-  color: #475569;
+  color: var(--color-text-muted);
   font-size: 15px;
   display: flex;
   align-items: center;
@@ -113,13 +114,12 @@ const typeLabel = computed(() => TYPE_LABELS[props.place.type] || props.place.ty
 
 .distance-icon {
   flex-shrink: 0;
-  color: #64748b;
+  color: var(--color-text-subtle);
 }
 
-/* Hint text */
 .hint {
   margin: 0;
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--color-text-faint);
 }
 </style>

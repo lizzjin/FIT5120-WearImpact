@@ -5,8 +5,20 @@
     <div class="page-container">
       <!-- Page header -->
       <div class="brand-page-header">
-        <h1>Brand Sustainability Scores</h1>
-        <p>Search clothing brands to see their supply chain transparency, environmental, and governance scores.</p>
+        <h1
+          v-motion
+          :initial="{ opacity: 0, y: 20 }"
+          :enter="{ opacity: 1, y: 0, transition: { duration: 500 } }"
+        >
+          Brand Sustainability Scores
+        </h1>
+        <p
+          v-motion
+          :initial="{ opacity: 0, y: 14 }"
+          :enter="{ opacity: 1, y: 0, transition: { duration: 500, delay: 150 } }"
+        >
+          Search clothing brands to see their supply chain transparency, environmental, and governance scores.
+        </p>
       </div>
 
       <!-- Search bar + button -->
@@ -82,11 +94,14 @@
         <!-- Brand cards (paginated) -->
         <template v-else>
           <button
-            v-for="item in paginatedList"
+            v-for="(item, idx) in paginatedList"
             :key="item.company_id"
             class="brand-card"
             :class="{ 'brand-card--active': selectedCompany?.company_id === item.company_id }"
             @click="openModal(item)"
+            v-motion
+            :initial="{ opacity: 0, y: 24 }"
+            :enter="{ opacity: 1, y: 0, transition: { duration: 400, delay: 60 * idx } }"
           >
             <!-- Identity: logo + name -->
             <div class="card-identity">
@@ -125,7 +140,7 @@
               >{{ item.score_label }}</span>
             </div>
 
-            <!-- Dimension mini-bars (prefetched detail) -->
+            <!-- Dimension mini-bars -->
             <div class="card-mini-bars">
               <template v-if="companyDetails[item.company_id]">
                 <div
@@ -173,7 +188,7 @@
 
         <div class="page-numbers">
           <template v-for="p in visiblePages" :key="p">
-            <span v-if="p === '...'" class="page-ellipsis">…</span>
+            <span v-if="p === '...'" class="page-ellipsis">&hellip;</span>
             <button
               v-else
               class="page-number"
@@ -196,14 +211,19 @@
       </div>
     </div>
 
-    <!-- ── Centered detail modal ────────────────────────────────────────────── -->
-    <Transition name="modal-fade">
-      <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
-        <div class="modal-panel" role="dialog" aria-modal="true" aria-label="Brand sustainability detail">
+    <!-- ── Radix Vue Dialog (replaces hand-built modal) ──────────────────── -->
+    <DialogRoot :open="showModal" @update:open="val => { if (!val) closeModal() }">
+      <DialogPortal>
+        <DialogOverlay class="modal-backdrop" />
+        <DialogContent class="modal-panel" aria-describedby="brand-detail-desc">
+          <DialogTitle class="sr-only">Brand sustainability detail</DialogTitle>
+          <DialogDescription id="brand-detail-desc" class="sr-only">
+            Detailed sustainability scores and policies for the selected brand.
+          </DialogDescription>
 
-          <button class="modal-close" @click="closeModal" aria-label="Close">
+          <DialogClose class="modal-close" aria-label="Close">
             <X :size="18" :stroke-width="2" />
-          </button>
+          </DialogClose>
 
           <div class="modal-scroll">
             <!-- Loading skeleton -->
@@ -351,15 +371,16 @@
               </div>
             </template>
           </div>
-        </div>
-      </div>
-    </Transition>
+        </DialogContent>
+      </DialogPortal>
+    </DialogRoot>
   </div>
 </template>
 
 <script setup>
 import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, MinusCircle, X, XCircle } from 'lucide-vue-next'
 import { computed, defineComponent, h, onMounted, reactive, ref, watch } from 'vue'
+import { DialogClose, DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogRoot, DialogTitle } from 'radix-vue'
 import BrandSearchBar from '../components/BrandSearchBar.vue'
 import MetricBar from '../components/MetricBar.vue'
 import Navbar from '../components/Navbar.vue'
@@ -474,13 +495,12 @@ function onCardLogoError(companyId) {
 }
 
 // ── Detail cache (prefetched per-company) ─────────────────────────────────────
-// Keyed by company_id. undefined = not yet fetched, null = fetch failed, object = loaded.
 const companyDetails = reactive({})
 
 async function prefetchDetails(companies) {
   await Promise.allSettled(
     companies.map(async (c) => {
-      if (companyDetails[c.company_id] !== undefined) return // already cached or failed
+      if (companyDetails[c.company_id] !== undefined) return
       try {
         companyDetails[c.company_id] = await fetchCompanyDetail(c.company_id)
       } catch {
@@ -519,7 +539,6 @@ const displayList = computed(() =>
 const PAGE_SIZE   = 9
 const currentPage = ref(1)
 
-// Featured uses server-side total; search uses client-side result count.
 const totalPages = computed(() => {
   if (committedQuery.value.trim()) {
     return Math.ceil(searchResults.value.length / PAGE_SIZE)
@@ -527,7 +546,6 @@ const totalPages = computed(() => {
   return Math.ceil(featuredTotal.value / PAGE_SIZE)
 })
 
-// Featured: API already returns current page; search: slice locally.
 const paginatedList = computed(() => {
   if (committedQuery.value.trim()) {
     const start = (currentPage.value - 1) * PAGE_SIZE
@@ -536,7 +554,6 @@ const paginatedList = computed(() => {
   return featuredCompanies.value
 })
 
-// Smart page number list: first, last, current ±2 with ellipsis gaps.
 const visiblePages = computed(() => {
   const total   = totalPages.value
   const current = currentPage.value
@@ -558,17 +575,14 @@ const visiblePages = computed(() => {
   return result
 })
 
-// Reset to page 1 when the committed query changes (new search or clearing search).
 watch(committedQuery, () => { currentPage.value = 1 })
 
 async function goToPage(p) {
   currentPage.value = p
   window.scrollTo({ top: 0, behavior: 'smooth' })
   if (committedQuery.value.trim()) {
-    // Search mode: data already in searchResults, just prefetch new slice
     prefetchDetails(paginatedList.value)
   } else {
-    // Featured mode: fetch the new page from the server
     await loadFeaturedPage(p)
   }
 }
@@ -603,7 +617,6 @@ async function openModal(item) {
   selectedCompany.value = item
   showModal.value = true
 
-  // Use cached detail if already prefetched
   const cached = companyDetails[item.company_id]
   if (cached) {
     companyDetail.value = cached
@@ -618,7 +631,7 @@ async function openModal(item) {
     companyDetails[item.company_id] = detail
     companyDetail.value = detail
   } catch {
-    // stays null — modal shows nothing
+    // stays null
   } finally {
     isLoadingDetail.value = false
   }
@@ -629,7 +642,7 @@ function closeModal() {
   selectedCompany.value = null
 }
 
-// ── Detail computed values (for modal) ───────────────────────────────────────
+// ── Detail computed values ───────────────────────────────────────────────────
 const scoreColor      = computed(() => getLabelColor(companyDetail.value?.score_label))
 const scoreBg         = computed(() => getLabelBg(companyDetail.value?.score_label))
 const scoreDescription = computed(() => LABEL_DESCRIPTIONS[companyDetail.value?.score_label] || '')
@@ -671,7 +684,6 @@ async function handleSearch(query) {
     const data = await searchBrands(q)
     searchResults.value = data.results ?? []
     emptyMessage.value = data.message || 'No brands found. Try a different spelling.'
-    // Prefetch detail for search results' first page
     prefetchDetails(searchResults.value.slice(0, PAGE_SIZE))
   } catch {
     searchResults.value = []
@@ -683,9 +695,22 @@ async function handleSearch(query) {
 </script>
 
 <style scoped>
+/* ── Screen-reader only ─────────────────────────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 /* ── Page shell ──────────────────────────────────────────────────────────────── */
 .brand-page {
-  background: #f8faf8;
+  background: var(--color-bg);
   min-height: 100vh;
 }
 
@@ -704,14 +729,14 @@ async function handleSearch(query) {
 .brand-page-header h1 {
   font-size: 32px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--color-text);
   margin-bottom: 8px;
   letter-spacing: -0.5px;
 }
 
 .brand-page-header p {
   font-size: 15px;
-  color: #64748b;
+  color: var(--color-text-subtle);
   max-width: 600px;
   line-height: 1.6;
   margin: 0;
@@ -732,19 +757,23 @@ async function handleSearch(query) {
   align-items: center;
   gap: 8px;
   padding: 14px 28px;
-  background: #16a34a;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 14px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.search-btn:hover { background: #15803d; }
+.search-btn:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25);
+}
 
 /* ── Section label row ───────────────────────────────────────────────────────── */
 .grid-label-row {
@@ -757,7 +786,7 @@ async function handleSearch(query) {
 .grid-section-label {
   font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-text);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -766,15 +795,15 @@ async function handleSearch(query) {
 .result-count {
   font-size: 13px;
   font-weight: 500;
-  color: #64748b;
-  background: #f1f5f9;
+  color: var(--color-text-subtle);
+  background: var(--color-surface-alt);
   padding: 2px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .grid-sublabel {
   font-size: 14px;
-  color: #94a3b8;
+  color: var(--color-text-faint);
 }
 
 /* ── Card grid ───────────────────────────────────────────────────────────────── */
@@ -786,9 +815,9 @@ async function handleSearch(query) {
 
 /* ── Brand card ──────────────────────────────────────────────────────────────── */
 .brand-card {
-  background: white;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 20px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-card);
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
   padding: 22px;
   display: flex;
@@ -801,7 +830,6 @@ async function handleSearch(query) {
   overflow: hidden;
 }
 
-/* Green accent bar on the left side */
 .brand-card::before {
   content: '';
   position: absolute;
@@ -809,15 +837,15 @@ async function handleSearch(query) {
   top: 0;
   bottom: 0;
   width: 4px;
-  background: #16a34a;
+  background: var(--color-primary);
   opacity: 0;
   transition: opacity 0.2s ease;
   border-radius: 20px 0 0 20px;
 }
 
 .brand-card:hover {
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.1);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-3px);
   border-color: #d1fae5;
 }
 
@@ -828,7 +856,7 @@ async function handleSearch(query) {
 
 .brand-card--active {
   border-color: #86efac;
-  background: #f0fdf4;
+  background: var(--color-primary-lighter);
 }
 
 /* Card identity row */
@@ -850,7 +878,7 @@ async function handleSearch(query) {
   color: #334155;
   flex-shrink: 0;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   background: white;
 }
 
@@ -863,13 +891,12 @@ async function handleSearch(query) {
 }
 
 .avatar-letter { line-height: 1; }
-
 .card-name-block { min-width: 0; }
 
 .card-brand-name {
   font-size: 15px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-text);
   margin: 0;
   line-height: 1.3;
   white-space: nowrap;
@@ -879,7 +906,7 @@ async function handleSearch(query) {
 
 .card-matched {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--color-text-faint);
   margin: 3px 0 0;
 }
 
@@ -889,7 +916,7 @@ async function handleSearch(query) {
   align-items: center;
   gap: 12px;
   padding-bottom: 14px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .card-score-number-wrap {
@@ -906,7 +933,7 @@ async function handleSearch(query) {
 
 .card-score-denom {
   font-size: 14px;
-  color: #94a3b8;
+  color: var(--color-text-faint);
   font-weight: 500;
 }
 
@@ -914,7 +941,7 @@ async function handleSearch(query) {
   font-size: 12px;
   font-weight: 700;
   padding: 5px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   white-space: nowrap;
 }
 
@@ -933,7 +960,7 @@ async function handleSearch(query) {
 
 .mini-bar-label {
   font-size: 11px;
-  color: #64748b;
+  color: var(--color-text-subtle);
   width: 74px;
   flex-shrink: 0;
   font-weight: 500;
@@ -942,20 +969,20 @@ async function handleSearch(query) {
 .mini-bar-track {
   flex: 1;
   height: 5px;
-  background: #f1f5f9;
-  border-radius: 999px;
+  background: var(--color-border-light);
+  border-radius: var(--radius-pill);
   overflow: hidden;
 }
 
 .mini-bar-fill {
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   transition: width 0.5s ease;
 }
 
 .mini-bar-pct {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--color-text-faint);
   width: 28px;
   text-align: right;
   flex-shrink: 0;
@@ -967,17 +994,17 @@ async function handleSearch(query) {
   align-items: center;
   justify-content: space-between;
   padding-top: 14px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--color-border-light);
 }
 
 .card-cta-text {
   font-size: 13px;
   font-weight: 600;
-  color: #16a34a;
+  color: var(--color-primary);
 }
 
 .card-arrow {
-  color: #16a34a;
+  color: var(--color-primary);
   transition: transform 0.15s ease;
 }
 
@@ -1000,26 +1027,18 @@ async function handleSearch(query) {
   100% { background-position: -200% 0; }
 }
 
-.sk-identity {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
+.sk-identity { display: flex; align-items: center; gap: 12px; }
 .sk-avatar   { width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; }
 .sk-text     { flex: 1; display: flex; flex-direction: column; gap: 8px; }
 .sk-line-long  { height: 14px; width: 70%; }
 .sk-line-short { height: 12px; width: 45%; }
 .sk-score-block { height: 48px; border-radius: 12px; }
-
 .sk-mini-rows { display: flex; flex-direction: column; gap: 8px; }
 .sk-mini-row  { display: flex; align-items: center; gap: 8px; }
 .sk-mini-label { width: 60px; height: 10px; flex-shrink: 0; }
-.sk-mini-track { flex: 1; height: 5px; border-radius: 999px; }
-
+.sk-mini-track { flex: 1; height: 5px; border-radius: var(--radius-pill); }
 .sk-cta-bar { height: 12px; width: 50%; border-radius: 6px; }
 
-/* Skeleton detail (modal) */
 .detail-skeleton   { display: flex; flex-direction: column; gap: 16px; }
 .sk-detail-header  { height: 160px; border-radius: 20px; }
 .sk-detail-body    { height: 180px; border-radius: 20px; }
@@ -1035,9 +1054,9 @@ async function handleSearch(query) {
   gap: 12px;
 }
 
-.empty-icon  { opacity: 0.35; color: #94a3b8; }
-.empty-title { font-size: 16px; font-weight: 600; color: #64748b; margin: 0; }
-.empty-sub   { font-size: 14px; color: #94a3b8; margin: 0; }
+.empty-icon  { opacity: 0.35; color: var(--color-text-faint); }
+.empty-title { font-size: 16px; font-weight: 600; color: var(--color-text-subtle); margin: 0; }
+.empty-sub   { font-size: 14px; color: var(--color-text-faint); margin: 0; }
 
 /* ── Pagination ──────────────────────────────────────────────────────────────── */
 .pagination {
@@ -1053,10 +1072,10 @@ async function handleSearch(query) {
   align-items: center;
   gap: 6px;
   padding: 9px 18px;
-  border: 1.5px solid #e5e7eb;
+  border: 1.5px solid var(--color-border);
   border-radius: 12px;
-  background: white;
-  color: #475569;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -1064,29 +1083,22 @@ async function handleSearch(query) {
 }
 
 .page-nav-btn:hover:not(:disabled) {
-  background: #f0fdf4;
+  background: var(--color-primary-lighter);
   border-color: #86efac;
-  color: #16a34a;
+  color: var(--color-primary);
 }
 
-.page-nav-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
+.page-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-.page-numbers {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+.page-numbers { display: flex; align-items: center; gap: 6px; }
 
 .page-number {
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  border: 1.5px solid #e5e7eb;
-  background: white;
-  color: #475569;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -1097,13 +1109,13 @@ async function handleSearch(query) {
 }
 
 .page-number:hover:not(.page-number--active) {
-  background: #f8faf8;
+  background: var(--color-bg);
   border-color: #d1d5db;
 }
 
 .page-number--active {
-  background: #16a34a;
-  border-color: #16a34a;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: white;
 }
 
@@ -1114,11 +1126,11 @@ async function handleSearch(query) {
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  color: #94a3b8;
+  color: var(--color-text-faint);
   user-select: none;
 }
 
-/* ── Modal backdrop ──────────────────────────────────────────────────────────── */
+/* ── Modal (Radix Dialog) ────────────────────────────────────────────────────── */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1126,26 +1138,35 @@ async function handleSearch(query) {
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  animation: fadeIn 200ms ease;
 }
 
-/* ── Modal panel ─────────────────────────────────────────────────────────────── */
 .modal-panel {
-  width: 100%;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 48px);
   max-width: 640px;
   max-height: 88vh;
-  background: #f8faf8;
+  background: var(--color-bg);
   border-radius: 24px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  position: relative;
-  box-shadow:
-    0 24px 64px rgba(15, 23, 42, 0.22),
-    0 4px 16px rgba(15, 23, 42, 0.08);
+  z-index: 201;
+  box-shadow: var(--shadow-modal);
+  animation: modalScaleIn 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 .modal-close {
@@ -1155,28 +1176,28 @@ async function handleSearch(query) {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  border: 1.5px solid #e5e7eb;
-  background: white;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
+  color: var(--color-text-subtle);
   z-index: 1;
   flex-shrink: 0;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .modal-close:hover {
-  background: #f1f5f9;
+  background: var(--color-surface-alt);
   border-color: #d1d5db;
-  color: #0f172a;
+  color: var(--color-text);
 }
 
 .modal-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 56px 24px 28px; /* top padding clears close button */
+  padding: 56px 24px 28px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -1184,9 +1205,9 @@ async function handleSearch(query) {
 
 /* ── Detail cards (inside modal) ─────────────────────────────────────────────── */
 .detail-card {
-  background: white;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 20px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-card);
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
   padding: 22px;
 }
@@ -1194,7 +1215,7 @@ async function handleSearch(query) {
 .detail-card h3 {
   font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-text);
   margin-bottom: 6px;
 }
 
@@ -1217,7 +1238,7 @@ async function handleSearch(query) {
   color: #334155;
   flex-shrink: 0;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
 }
 
 .detail-logo-img {
@@ -1231,16 +1252,16 @@ async function handleSearch(query) {
 .brand-summary-header h2 {
   font-size: 20px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--color-text);
   margin-bottom: 6px;
 }
 
 .category-tag {
   font-size: 12px;
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-weight: 500;
 }
 
@@ -1271,11 +1292,11 @@ async function handleSearch(query) {
 .score-number     { font-size: 36px; font-weight: 800; line-height: 1; }
 .score-max        { font-size: 15px; font-weight: 500; opacity: 0.65; }
 .score-label-text { font-size: 14px; font-weight: 700; }
-.score-desc       { font-size: 14px; color: #475569; line-height: 1.6; margin: 0; }
+.score-desc       { font-size: 14px; color: var(--color-text-muted); line-height: 1.6; margin: 0; }
 
 .scores-desc {
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-subtle);
   margin-bottom: 16px;
   line-height: 1.5;
 }
@@ -1287,19 +1308,19 @@ async function handleSearch(query) {
   justify-content: space-between;
   align-items: center;
   padding-top: 12px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--color-border-light);
 }
 
 .fibre-label { font-size: 14px; color: #334155; }
-.fibre-value { font-size: 14px; font-weight: 700; color: #0f172a; }
+.fibre-value { font-size: 14px; font-weight: 700; color: var(--color-text); }
 
 .brands-chip-list { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .brand-chip {
-  background: #f1f5f9;
+  background: var(--color-surface-alt);
   color: #334155;
   padding: 5px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 13px;
   font-weight: 500;
 }
@@ -1324,29 +1345,6 @@ async function handleSearch(query) {
 .source-link:hover { background: #075985; }
 .source-link .cta-arrow { transition: transform 0.15s ease; }
 .source-link:hover .cta-arrow { transform: translateX(3px); }
-
-/* ── Modal transition (scale + fade) ─────────────────────────────────────────── */
-.modal-fade-enter-active { transition: opacity 240ms ease; }
-.modal-fade-leave-active { transition: opacity 200ms ease; }
-.modal-fade-enter-from,
-.modal-fade-leave-to     { opacity: 0; }
-
-.modal-fade-enter-active .modal-panel {
-  animation: modalScaleIn 280ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-.modal-fade-leave-active .modal-panel {
-  animation: modalScaleOut 200ms ease forwards;
-}
-
-@keyframes modalScaleIn {
-  from { opacity: 0; transform: scale(0.95) translateY(10px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0);    }
-}
-
-@keyframes modalScaleOut {
-  from { opacity: 1; transform: scale(1); }
-  to   { opacity: 0; transform: scale(0.95); }
-}
 
 /* ── Responsive ──────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {

@@ -1456,7 +1456,7 @@ onBeforeUnmount(() => {
 <style scoped>
 /* ── Page shell ─────────────────────────────────────────────────────────── */
 .eco-page {
-  background: #ffffff;
+  background: var(--color-surface);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -1483,7 +1483,7 @@ onBeforeUnmount(() => {
   bottom: 0;
   width: 420px;
   z-index: 10;
-  background: #ffffff;
+  background: var(--color-surface);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1500,7 +1500,7 @@ onBeforeUnmount(() => {
 .sidebar-eyebrow {
   font-size: 10px;
   font-weight: 700;
-  color: #16a34a;
+  color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin: 0 0 4px;
@@ -1509,14 +1509,14 @@ onBeforeUnmount(() => {
 .sidebar-title {
   font-size: 20px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--color-text);
   margin: 0 0 4px;
   line-height: 1.25;
 }
 
 .sidebar-subtitle {
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-subtle);
   line-height: 1.4;
   margin: 0;
 }
@@ -1542,11 +1542,11 @@ onBeforeUnmount(() => {
 }
 
 .skeleton-card {
-  background: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 20px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-card);
   padding: 22px 24px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--shadow-card);
 }
 
 .skeleton-bar {
@@ -1621,7 +1621,7 @@ onBeforeUnmount(() => {
 }
 
 .address-input:focus {
-  border-color: #16a34a;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.12);
 }
 
@@ -1704,8 +1704,8 @@ onBeforeUnmount(() => {
 }
 
 .mode-btn.active {
-  background: #f0fdf4;
-  border: 2px solid #16a34a;
+  background: var(--color-primary-lighter);
+  border: 2px solid var(--color-primary);
   color: #166534;
 }
 
@@ -1807,9 +1807,9 @@ onBeforeUnmount(() => {
 }
 
 .filter-btn.active {
-  background: #16a34a;
+  background: var(--color-primary);
   color: white;
-  border-color: #16a34a;
+  border-color: var(--color-primary);
 }
 
 .filter-dot {
@@ -2007,11 +2007,11 @@ onBeforeUnmount(() => {
 
 /* Details panel — now sits at the top of the sidebar (gap handles spacing) */
 .details-panel {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
   padding: 24px;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-card);
   position: relative;
   flex-shrink: 0;
 }
@@ -2082,7 +2082,7 @@ onBeforeUnmount(() => {
 }
 
 .details-panel a {
-  color: #16a34a;
+  color: var(--color-primary);
   word-break: break-all;
 }
 
@@ -2109,10 +2109,10 @@ onBeforeUnmount(() => {
 .directions-btn {
   margin-top: 6px;
   width: 100%;
-  background: #16a34a;
+  background: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-btn);
   padding: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -2121,25 +2121,36 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  transition: background 0.15s;
+  transition: background var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .directions-btn:hover {
-  background: #15803d;
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25);
 }
 
-/* Slide-up transition */
-.slide-up-enter-active,
+/* Slide-up transition — elastic ease for details panel */
+.slide-up-enter-active {
+  transition:
+    opacity 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .slide-up-leave-active {
   transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
+    opacity 200ms ease,
+    transform 200ms ease;
 }
 
-.slide-up-enter-from,
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(16px) scale(0.98);
+}
+
 .slide-up-leave-to {
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(8px);
 }
 
 /* Responsive — sidebar slides to bottom on mobile */

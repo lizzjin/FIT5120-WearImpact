@@ -2,7 +2,9 @@
   <footer class="footer">
     <div class="footer-grid">
       <div class="footer-brand">
-        <h2><span class="logo-wear">Wear</span><span class="logo-impact">Impact</span></h2>
+        <h2>
+          <span class="text-primary">Wear</span><span class="text-white">Impact</span>
+        </h2>
         <p>
           Helping Australians make more informed, sustainable fashion choices — one purchase at a time.
         </p>
@@ -26,14 +28,14 @@
     </div>
 
     <div class="footer-bottom">
-      <p>© 2026 WearImpact. All rights reserved.</p>
+      <p>&copy; 2026 WearImpact. All rights reserved.</p>
     </div>
   </footer>
 </template>
 
 <style scoped>
 .footer {
-  background: #07152d;
+  background: var(--color-dark-bg);
   color: white;
   padding: 56px 40px 24px;
   border-radius: 24px 24px 0 0;
@@ -52,9 +54,6 @@
   font-weight: 800;
   margin-bottom: 16px;
 }
-
-.logo-wear   { color: #16a34a; }
-.logo-impact { color: white; }
 
 .footer h4 {
   color: white;
@@ -84,7 +83,7 @@
   color: #d7e0ee;
   text-decoration: none;
   font-size: 14px;
-  transition: color 150ms ease;
+  transition: color var(--transition-base);
 }
 
 .footer a:hover {
@@ -99,13 +98,17 @@
 
 .footer-bottom p {
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-subtle);
   margin: 0;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
+  .footer {
+    padding: 40px 24px 20px;
+  }
   .footer-grid {
     grid-template-columns: 1fr;
+    gap: 28px;
   }
 }
 </style>
